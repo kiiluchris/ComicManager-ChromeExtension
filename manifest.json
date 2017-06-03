@@ -1,0 +1,48 @@
+{
+	"manifest_version": 2,
+	"name": "Comic Manager",
+	"version": "0.0.0.1",
+
+	"background" : {
+		"scripts" : [	
+			"background_scripts/page_opener.js",
+			"background_scripts/data_manager.js"
+		],
+		"persistent": false
+	},
+
+	"browser_action": {
+		"default_icon": "icons/icon16.png",
+		"default_popup": "popup.html"
+
+	},
+	"content_scripts": [{
+		"matches": [
+			"http://www.webtoons.com/favorite",			
+			"http://www.webtoons.com/en/*/list?title_no=*"
+		],
+		"css": [
+			"libraries/css/selectize.default.min.css"
+		],
+		"js": [
+			"libraries/js/jquery.min.js",
+			"libraries/js/selectize.min.js",
+			"content_scripts/webtoons.js"
+		]
+	}],
+	"icons": { 
+		"16": "icons/icon16.png",
+		"48": "icons/icon48.png",
+		"128": "icons/icon128.png" 
+     },
+	"permissions": [
+		"activeTab",
+		"storage",
+		"tabs",
+		"management",
+		"http://www.webtoons.com/favorite",
+		"http://www.webtoons.com/en/*",
+		"http://kissmanga.com/Manga/*",
+		"http://localhost:8080/*"
+	]
+}
