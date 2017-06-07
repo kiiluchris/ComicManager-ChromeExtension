@@ -31,8 +31,12 @@ function checkIfWebtoons(v,i){
     generateLink("webtoonsLink", 'Webtoons', function(e){
       chrome.tabs.sendMessage(i, { requestType:"startPrompt" });
     });
+    generateLink("webtoonsLinkDraggable", 'Webtoons Draggable', function(e){
+      chrome.tabs.sendMessage(i, { requestType:"startPromptDraggable" });
+    });
   } else {
     destroyLink("webtoonsLink");
+    destroyLink("webtoonsLinkDraggable");
   }
 }
 
@@ -58,7 +62,7 @@ function checkIfKissAnime(v){
           }());
           `
         },function(){
-          window.close();          
+          window.close();
         });
       });
   } else {
@@ -88,10 +92,10 @@ document.addEventListener('DOMContentLoaded', function() {
       chrome.management.setEnabled("ngpampappnmepgilojfohadhhmbhlaek", false, function(){
         chrome.management.setEnabled("ngpampappnmepgilojfohadhhmbhlaek", true, function () {
           chrome.tabs.reload(function(){
-            window.close();            
+            window.close();
           });
         });
-      });      
+      });
     });
     document.getElementById("getUrlsLink").addEventListener("click", function(e){
       chrome.tabs.query({'windowId': chrome.windows.WINDOW_ID_CURRENT},

@@ -4,7 +4,7 @@
 	"version": "0.0.0.1",
 
 	"background" : {
-		"scripts" : [	
+		"scripts" : [
 			"background_scripts/page_opener.js",
 			"background_scripts/data_manager.js"
 		],
@@ -18,7 +18,7 @@
 	},
 	"content_scripts": [{
 		"matches": [
-			"http://www.webtoons.com/favorite",			
+			"http://www.webtoons.com/favorite",
 			"http://www.webtoons.com/en/*/list?title_no=*"
 		],
 		"css": [
@@ -27,13 +27,14 @@
 		"js": [
 			"libraries/js/jquery.min.js",
 			"libraries/js/selectize.min.js",
+			"libraries/js/jquery-ui.min.js",
 			"content_scripts/webtoons.js"
 		]
 	}],
-	"icons": { 
+	"icons": {
 		"16": "icons/icon16.png",
 		"48": "icons/icon48.png",
-		"128": "icons/icon128.png" 
+		"128": "icons/icon128.png"
      },
 	"permissions": [
 		"activeTab",

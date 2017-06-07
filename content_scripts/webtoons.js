@@ -1,3 +1,43 @@
+function setupOverlays() {
+  var itemOrder = [];
+  var list = "ul#_webtoonList";
+  var listItems = "li:has(.txt_ico_up)";
+  var listOverlays = `${listItems} div.overlay`;
+  var webtoonList = $(list);
+  var todayComics = webtoonList.find(listItems);
+  var input = $(`<input type="checkbox" style="top:5%;right: 5%;position: absolute;width: 20px;height: 20px;">`);
+  var send = $(`<button style="background-color:rgba(255,255,255,0.9);font-size:24px;top: 75%;position: absolute;margin: 0 auto;left: 24%;width: 50%;">Send</button>`);
+  var exit = $(`<span style="font-size: 25px;background: rgba(255, 255, 255, 0.7);width: 35px;height: 35px;position: absolute;left: 5%;top: 2%;border-radius: 50%;">X</span>`);
+  var div = $(`<div class="overlay" style="position:absolute;background-color:rgba(40,220,24,0.4);width: 100%;height: 100%;z-index: 10000;top: 0;text-align: center;"></div>`);
+  send.on("click", function(e){
+    chrome.runtime.sendMessage({
+      todayComics: itemOrder,
+      requestType: "hasWebtoonDraggable"
+    }, removeOverlay);
+  });
+  exit.on("click", removeOverlay);
+  div.append(exit,send,input);
+  todayComics.append(div);
+  webtoonList.sortable({
+    items: listItems,
+    update: function(e, ui){
+      itemOrder = $(`${list} ${listItems}`).filter(":has(input:checked)")
+        .map(function () {
+          return {
+            title: $(this).find(".subj span").text(),
+            link: $(this).find("a").attr("href"),
+          };
+        }).get();
+    }
+  });
+  webtoonList.disableSelection();
+
+  chrome.runtime.sendMessage({requestType:"closeWindow"});
+
+  function removeOverlay(e){
+    webtoonList.find(listOverlays).remove();
+  }
+}
 function getTodaysComics(order,l){
     var webtoonList = document.querySelectorAll('#_webtoonList li');
     var todayComics = {};
@@ -63,7 +103,7 @@ function runPrompt(){
         options: titles
     });
 
-    chrome.runtime.sendMessage({requestType:"closeWindow"}, function(){        
+    chrome.runtime.sendMessage({requestType:"closeWindow"}, function(){
         mInput.focus();
     });
 
@@ -79,8 +119,13 @@ function runPrompt(){
 
 chrome.runtime.onMessage.addListener(
     function(request,sender,sendResponse){
-        if(request.requestType==="startPrompt"){
+        switch(request.requestType){
+          case "startPrompt":
             runPrompt();
+            break;
+          case "startPromptDraggable":
+            setupOverlays();
+            break;
         }
     }
 );

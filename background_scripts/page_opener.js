@@ -11,6 +11,9 @@ chrome.runtime.onMessage.addListener(
             case "openKissanimeChapter":
                 openKissanimeChapter(request.offset);
                 break;
+            case "hasWebtoonDraggable":
+                openWebtoonsDraggable(request.todayComics);
+                break;
         }
     }
 );
@@ -39,21 +42,38 @@ function openWebtoons(pages, titleOrder, i=0, tabIds=[]){
     if(++i < titleOrder.length){
         return openWebtoons(pages, titleOrder, i, tabIds);
     }
-    chrome.tabs.onUpdated.addListener(
-        function updateListener(tabId, changeInfo, tab){
-            if(changeInfo.status === "complete"){
-                var tabI = tabIds.indexOf(tabId);
-                if( tabI !== -1){
-                    chrome.tabs.executeScript(tabId, { code : 'document.querySelector(".detail_body .detail_lst a").click();'});
-                    tabIds.splice(tabI, 1);
-                }
-                if(tabIds.length===0){
-                    chrome.tabs.onUpdated.removeListener(updateListener);
-                    return;
-                }
-            }
+    monitorWebtoonTabs(tabIds);
+}
+function openWebtoonsDraggable(pages) {
+  var tabIds = [];
+  for (var i = 0; i < pages.length; i++) {
+    chrome.tabs.create({
+			active: false,
+			url: pages[i].link
+        },
+        function openFirstComic(tab){
+            tabIds.push(tab.id);
         }
     );
+  }
+  monitorWebtoonTabs(tabIds);
+}
+function monitorWebtoonTabs(tabIds) {
+  chrome.tabs.onUpdated.addListener(
+      function updateListener(tabId, changeInfo, tab){
+          if(changeInfo.status === "complete"){
+              var tabI = tabIds.indexOf(tabId);
+              if( tabI !== -1){
+                  chrome.tabs.executeScript(tabId, { code : 'document.querySelector(".detail_body .detail_lst a").click();'});
+                  tabIds.splice(tabI, 1);
+              }
+              if(tabIds.length===0){
+                  chrome.tabs.onUpdated.removeListener(updateListener);
+                  return;
+              }
+          }
+      }
+  );
 }
 
 function openKissanimeChapter(offset){
