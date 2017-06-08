@@ -1,5 +1,4 @@
 function setupOverlays() {
-  var itemOrder = [];
   var list = "ul#_webtoonList";
   var listItems = "li:has(.txt_ico_up)";
   var listOverlays = `${listItems} div.overlay`;
@@ -10,8 +9,15 @@ function setupOverlays() {
   var exit = $(`<span style="font-size: 25px;background: rgba(255, 255, 255, 0.7);width: 35px;height: 35px;position: absolute;left: 5%;top: 2%;border-radius: 50%;">X</span>`);
   var div = $(`<div class="overlay" style="position:absolute;background-color:rgba(40,220,24,0.4);width: 100%;height: 100%;z-index: 10000;top: 0;text-align: center;"></div>`);
   send.on("click", function(e){
+    var items =  $(`${list} ${listItems}`).filter(":has(input:checked)")
+      .map(function () {
+        return {
+          title: $(this).find(".subj span").text(),
+          link: $(this).find("a").attr("href"),
+        };
+      }).get();
     chrome.runtime.sendMessage({
-      todayComics: itemOrder,
+      todayComics: items,
       requestType: "hasWebtoonDraggable"
     }, removeOverlay);
   });
@@ -19,22 +25,14 @@ function setupOverlays() {
   div.append(exit,send,input);
   todayComics.append(div);
   webtoonList.sortable({
-    items: listItems,
-    update: function(e, ui){
-      itemOrder = $(`${list} ${listItems}`).filter(":has(input:checked)")
-        .map(function () {
-          return {
-            title: $(this).find(".subj span").text(),
-            link: $(this).find("a").attr("href"),
-          };
-        }).get();
-    }
+    items: listItems
   });
   webtoonList.disableSelection();
 
   chrome.runtime.sendMessage({requestType:"closeWindow"});
 
   function removeOverlay(e){
+    webtoonList.sortable('disable');
     webtoonList.find(listOverlays).remove();
   }
 }
