@@ -1,0 +1,32 @@
+.overlay {
+  position: absolute;
+  background-color: rgba(40,220,24,0.4);
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  top: 0;
+  text-align: center;
+}
+.overlay input {
+  top:5%;
+  right: 5%;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+}
+.overlay .overlay-spans {
+  position: absolute;
+  left: 0%;
+  top: 60%;
+}
+
+.overlay .overlay-spans span {
+  font-size: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  position: relative;
+  display: inline-block;
+  margin-left: 5px;
+}

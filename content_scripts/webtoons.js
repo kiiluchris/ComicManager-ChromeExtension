@@ -2,12 +2,21 @@ function setupOverlays() {
   var list = "ul#_webtoonList";
   var listItems = "li:has(.txt_ico_up)";
   var listOverlays = `${listItems} div.overlay`;
+  var overLaySpans = "overlay-spans";
+  var spanButton = (text) => `<span>${text}</span>`;
   var webtoonList = $(list);
   var todayComics = webtoonList.find(listItems);
-  var input = $(`<input type="checkbox" style="top:5%;right: 5%;position: absolute;width: 20px;height: 20px;">`);
-  var send = $(`<button style="background-color:rgba(255,255,255,0.9);font-size:24px;top: 75%;position: absolute;margin: 0 auto;left: 24%;width: 50%;">Send</button>`);
-  var exit = $(`<span style="font-size: 25px;background: rgba(255, 255, 255, 0.7);width: 35px;height: 35px;position: absolute;left: 5%;top: 2%;border-radius: 50%;">X</span>`);
-  var div = $(`<div class="overlay" style="position:absolute;background-color:rgba(40,220,24,0.4);width: 100%;height: 100%;z-index: 10000;top: 0;text-align: center;"></div>`);
+  var input = $(`<input type="checkbox">`);
+  var send = $(spanButton("&#10004;"));
+  var exit = $(spanButton("&#10006;"));
+  var div = $(`
+    <div class="overlay">
+      <div class="${overLaySpans}">
+      </div>
+    </div>
+    `);
+  //  &#10004; tick signx
+  //  &#10006; x
   send.on("click", function(e){
     var items =  $(`${list} ${listItems}`).filter(":has(input:checked)")
       .map(function () {
@@ -22,7 +31,8 @@ function setupOverlays() {
     }, removeOverlay);
   });
   exit.on("click", removeOverlay);
-  div.append(exit,send,input);
+  div.append(input);
+  div.find("."+overLaySpans).append(send,exit);
   todayComics.append(div);
   webtoonList.sortable({
     items: listItems

@@ -22,7 +22,8 @@
 			"http://www.webtoons.com/en/*/list?title_no=*"
 		],
 		"css": [
-			"libraries/css/selectize.default.min.css"
+			"libraries/css/selectize.default.min.css",
+			"libraries/css/app.css"
 		],
 		"js": [
 			"libraries/js/jquery.min.js",
