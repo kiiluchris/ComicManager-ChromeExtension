@@ -6,7 +6,8 @@
 	"background" : {
 		"scripts" : [
 			"background_scripts/page_opener.js",
-			"background_scripts/data_manager.js"
+			"background_scripts/data_manager.js",
+			"background_scripts/context_menu.js"
 		],
 		"persistent": false
 	},
@@ -19,7 +20,9 @@
 	"content_scripts": [{
 		"matches": [
 			"http://www.webtoons.com/favorite",
-			"http://www.webtoons.com/en/*/list?title_no=*"
+			"http://www.webtoons.com/en/*/list?title_no=*",
+			"*://*.webtoons.com/en/*/viewer*"
+
 		],
 		"css": [
 			"libraries/css/selectize.default.min.css",
@@ -39,6 +42,7 @@
      },
 	"permissions": [
 		"activeTab",
+		"contextMenus",
 		"storage",
 		"tabs",
 		"management",

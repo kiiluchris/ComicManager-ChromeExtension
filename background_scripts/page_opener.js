@@ -8,6 +8,9 @@ chrome.runtime.onMessage.addListener(
                 openPages(request.pages, request.tabId)
                 sendResponse();
                 break;
+            case "openWebtoonsReading":
+              openWebtoonsReading(request.pages);
+              break;
             case "openKissanimeChapter":
                 openKissanimeChapter(request.offset);
                 break;
@@ -17,7 +20,18 @@ chrome.runtime.onMessage.addListener(
         }
     }
 );
-
+ function openWebtoonsReading(urls){
+   chrome.tabs.query({windowId: chrome.windows.WINDOW_ID_CURRENT},
+     function (tabs) {
+       var tabUrls = tabs.map(function (t) {
+         return t.url;
+       });
+       urls = urls.filter(function (u) {
+         return tabUrls.indexOf(u) === -1;
+       }).slice(0,10);
+       openPages(urls);
+   })
+ }
 function openPages(urls, tabId) {
   urls.forEach((url) => {
     chrome.tabs.create({

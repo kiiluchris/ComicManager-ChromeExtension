@@ -46,6 +46,7 @@ function setupOverlays() {
     webtoonList.find(listOverlays).remove();
   }
 }
+
 function getTodaysComics(order,l){
     var webtoonList = document.querySelectorAll('#_webtoonList li');
     var todayComics = {};
@@ -125,6 +126,13 @@ function runPrompt(){
     }
 }
 
+function openNext10Chapters() {
+  var links = $("div#topEpisodeList .episode_cont ul li:has(a.on)").nextAll()
+     .map(function(){
+      	return $(this).children("a").attr("href");
+      }).get();
+  chrome.runtime.sendMessage({pages: links,requestType: "openWebtoonsReading"});
+}
 chrome.runtime.onMessage.addListener(
     function(request,sender,sendResponse){
         switch(request.requestType){
@@ -133,6 +141,9 @@ chrome.runtime.onMessage.addListener(
             break;
           case "startPromptDraggable":
             setupOverlays();
+            break;
+          case "openNextChapters":
+            openNext10Chapters();
             break;
         }
     }
