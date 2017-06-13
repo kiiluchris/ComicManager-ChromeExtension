@@ -46,6 +46,10 @@ function setupOverlays() {
     webtoonList.find(listOverlays).remove();
   }
 }
+function editOverlayInputs(bool) {
+    $("ul#_webtoonList li:has(.txt_ico_up) div.overlay input")
+      .prop("checked", bool);
+}
 
 function getTodaysComics(order,l){
     var webtoonList = document.querySelectorAll('#_webtoonList li');
@@ -144,6 +148,12 @@ chrome.runtime.onMessage.addListener(
             break;
           case "openNextChapters":
             openNext10Chapters();
+            break;
+          case "fillWebtoonOverlayInputs":
+            editOverlayInputs(true);
+            break;
+          case "clearWebtoonOverlayInputs":
+            editOverlayInputs(false);
             break;
         }
     }
