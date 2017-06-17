@@ -1,25 +1,36 @@
 function createNextButton() {
+	let style = `
+	<style>
+		div#mNextChapter{
+				width: 50px;
+				height: 50px;
+				position: fixed;
+				text-align: center;
+				font-weight: bolder;
+				bottom: 10%;
+				background: rgba(255,255,255,1);
+				line-height: 50px;
+				cursor: pointer;
+				box-shadow: 0px 0px 12px 6px rgba(0, 0, 0, 0.2);
+				transform: translateX(720px);
+		}
+		@media screen and (max-width: 720px) {
+		    div#mNextChapter {
+		        transform: none;
+						right: 5%;
+		    }
+		}
+	</style>
+`;
 	let button = $(`
-	<div id="mNextChapter" style="
-		width: 50px;
-		height: 50px;
-		position: fixed;
-		text-align: center;
-		font-weight: bolder;
-		bottom: 10%;
-		background: rgba(255,255,255,1);
-		line-height: 50px;
-		right: 5%;
-		cursor: pointer;
-		box-shadow: 0px 0px 12px 6px rgba(0, 0, 0, 0.2);
-		">
+	<div id="mNextChapter">
 	  &gt;
 	</div>
 	`);
   button.on("click", function (e) {
     chrome.runtime.sendMessage({requestType: "tseirpFindLatestOpenChapter", tab: window.location.href});
   });
-  $("body").append(button);
+  $("body div.content").append(style, button);
 }
 
 function getNextPageHref() {
