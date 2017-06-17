@@ -12,13 +12,18 @@ function createNextButton() {
 				line-height: 50px;
 				cursor: pointer;
 				box-shadow: 0px 0px 12px 6px rgba(0, 0, 0, 0.2);
-				transform: translateX(720px);
+				right: 5%;
 		}
-		@media screen and (max-width: 720px) {
+		@media screen and (min-width: 1000px) {
 		    div#mNextChapter {
-		        transform: none;
-						right: 5%;
+						right: 34%;
 		    }
+		}
+		@media screen and (min-width: 1280px){
+			div#mNextChapter {
+				right: 0;
+				transform: translateX(720px);
+			}
 		}
 	</style>
 `;
