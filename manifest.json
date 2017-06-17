@@ -23,7 +23,8 @@
 			"http://www.webtoons.com/favorite",
 			"http://www.webtoons.com/en/*/list?title_no=*",
 			"*://*.webtoons.com/en/*/viewer*",
-			"http://tseirptranslations.com/*/*/is-*.html"
+			"http://tseirptranslations.com/*/*/is-*.html",
+			"http://www.novelupdates.com/series/invincible-saint-salaryman-the-path-i-walk-to-survive-in-this-other-world/*"
 		],
 		"css": [
 			"libraries/css/selectize.default.min.css",

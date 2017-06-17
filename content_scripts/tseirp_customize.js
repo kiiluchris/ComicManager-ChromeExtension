@@ -14,6 +14,9 @@ function createNextButton() {
 				box-shadow: 0px 0px 12px 6px rgba(0, 0, 0, 0.2);
 				right: 5%;
 		}
+		div#mNextChapter:hover {
+			background-color: #ccc;
+		}
 		@media screen and (min-width: 1000px) {
 		    div#mNextChapter {
 						right: 34%;
@@ -29,7 +32,7 @@ function createNextButton() {
 `;
 	let button = $(`
 	<div id="mNextChapter">
-	  &gt;
+	  &gt;<div></div>
 	</div>
 	`);
   button.on("click", function (e) {
@@ -41,6 +44,18 @@ function createNextButton() {
 function getNextPageHref() {
 	let nextPage = document.querySelectorAll("div div p span a")[1].href;
 	chrome.runtime.sendMessage({requestType:"openPages", pages: [nextPage]});
+}
+
+function updateSelectedChapter(chapter) {
+	let current  = $(`table#myTable tbody tr td:nth-child(3) a:contains(v${chapter.volume}c${chapter.chapter}${chapter.part ? " part"+chapter.part : ""})`);
+	current
+		.next("td input[type=checkbox]")[0]
+		.click();
+	let parentIndex = current.closest("tr").index();
+	let currentPage = $("div.digg_pagination em.current");
+	if(parentIndex === 0 && currentPage.index() !== 0){
+		currentPage.prev()[0].click();
+	}
 }
 
 (function () {
@@ -55,6 +70,9 @@ chrome.runtime.onMessage.addListener(
             case "getTseirpNextChapter":
                 getNextPageHref();
                 break;
+							case "updateISTseirp":
+								updateSelectedChapter(request.finishedChapter);
+								break;
         }
     }
 );
