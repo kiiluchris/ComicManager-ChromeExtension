@@ -7,7 +7,8 @@
 		"scripts" : [
 			"background_scripts/page_opener.js",
 			"background_scripts/data_manager.js",
-			"background_scripts/context_menu.js"
+			"background_scripts/context_menu.js",
+			"background_scripts/tseirp_tabopen.js"
 		],
 		"persistent": false
 	},
@@ -21,8 +22,8 @@
 		"matches": [
 			"http://www.webtoons.com/favorite",
 			"http://www.webtoons.com/en/*/list?title_no=*",
-			"*://*.webtoons.com/en/*/viewer*"
-
+			"*://*.webtoons.com/en/*/viewer*",
+			"http://tseirptranslations.com/*/*/is-*.html"
 		],
 		"css": [
 			"libraries/css/selectize.default.min.css",
@@ -32,7 +33,8 @@
 			"libraries/js/jquery.min.js",
 			"libraries/js/selectize.min.js",
 			"libraries/js/jquery-ui.min.js",
-			"content_scripts/webtoons.js"
+			"content_scripts/webtoons.js",
+			"content_scripts/tseirp_customize.js"
 		]
 	}],
 	"icons": {
