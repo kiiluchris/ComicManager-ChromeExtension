@@ -21,7 +21,7 @@ function createNextButton() {
 		}
 		@media screen and (min-width: 1280px){
 			div#mNextChapter {
-				right: 0;
+				right: auto;
 				transform: translateX(720px);
 			}
 		}
