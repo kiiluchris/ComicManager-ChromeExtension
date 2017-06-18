@@ -2,48 +2,50 @@ function setupOverlays() {
   var list = "ul#_webtoonList";
   var listItems = "li:has(.txt_ico_up)";
   var listOverlays = `${listItems} div.overlay`;
-  var overLaySpans = "overlay-spans";
-  var spanButton = (text) => `<span>${text}</span>`;
-  var webtoonList = $(list);
-  var todayComics = webtoonList.find(listItems);
-  var input = $(`<input type="checkbox">`);
-  var send = $(spanButton("&#10004;"));
-  var exit = $(spanButton("&#10006;"));
-  var div = $(`
-    <div class="overlay">
-      <div class="${overLaySpans}">
+  if($(listOverlays).length === 0){
+    var overLaySpans = "overlay-spans";
+    var spanButton = (text) => `<span>${text}</span>`;
+    var webtoonList = $(list);
+    var todayComics = webtoonList.find(listItems);
+    var input = $(`<input type="checkbox">`);
+    var send = $(spanButton("&#10004;"));
+    var exit = $(spanButton("&#10006;"));
+    var div = $(`
+      <div class="overlay">
+        <div class="${overLaySpans}">
+        </div>
       </div>
-    </div>
-    `);
-  //  &#10004; tick signx
-  //  &#10006; x
-  send.on("click", function(e){
-    var items =  $(`${list} ${listItems}`).filter(":has(input:checked)")
-      .map(function () {
-        return {
-          title: $(this).find(".subj span").text(),
-          link: $(this).find("a").attr("href"),
-        };
-      }).get();
-    chrome.runtime.sendMessage({
-      todayComics: items,
-      requestType: "hasWebtoonDraggable"
-    }, removeOverlay);
-  });
-  exit.on("click", removeOverlay);
-  div.append(input);
-  div.find("."+overLaySpans).append(send,exit);
-  todayComics.append(div);
-  webtoonList.sortable({
-    items: listItems
-  });
-  webtoonList.disableSelection();
+      `);
+    //  &#10004; tick signx
+    //  &#10006; x
+    send.on("click", function(e){
+      var items =  $(`${list} ${listItems}`).filter(":has(input:checked)")
+        .map(function () {
+          return {
+            title: $(this).find(".subj span").text(),
+            link: $(this).find("a").attr("href"),
+          };
+        }).get();
+      chrome.runtime.sendMessage({
+        todayComics: items,
+        requestType: "hasWebtoonDraggable"
+      }, removeOverlay);
+    });
+    exit.on("click", removeOverlay);
+    div.append(input);
+    div.find("."+overLaySpans).append(send,exit);
+    todayComics.append(div);
+    webtoonList.sortable({
+      items: listItems
+    });
+    webtoonList.disableSelection();
 
-  chrome.runtime.sendMessage({requestType:"closeWindow"});
+    chrome.runtime.sendMessage({requestType:"closeWindow"});
 
-  function removeOverlay(e){
-    webtoonList.sortable('disable');
-    webtoonList.find(listOverlays).remove();
+    function removeOverlay(e){
+      webtoonList.sortable('disable');
+      webtoonList.find(listOverlays).remove();
+    }
   }
 }
 function editOverlayInputs(bool) {

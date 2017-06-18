@@ -26,32 +26,9 @@ function destroyLink(i){
     }
 }
 
-function checkIfWebtoons(v,i){
-  if(v){
-    generateLink("webtoonsLink", 'Webtoons', function(e){
-      chrome.tabs.sendMessage(i, { requestType:"startPrompt" });
-    });
-    generateLink("webtoonsLinkDraggable", 'Webtoons Draggable', function(e){
-      chrome.tabs.sendMessage(i, { requestType:"startPromptDraggable" });
-    });
-  } else {
-    destroyLink("webtoonsLink");
-    destroyLink("webtoonsLinkDraggable");
-  }
-}
 
 function checkIfKissAnime(v){
 	if(v){
-	    generateLink("kissmangaTodayLink", "Kissmanga Today", function(e){
-        chrome.runtime.sendMessage({ requestType: "openKissanimeChapter", offset: 0}, function(){
-          window.close();
-        });
-	    });
-      generateLink("kissmangaYesterdayLink", "Kissmanga Yesterday", function(e){
-        chrome.runtime.sendMessage({ requestType: "openKissanimeChapter", offset: 1}, function(){
-          window.close();
-        });
-      });
       generateLink("kissmangaOpenAllLink", "Kissmanga Open All", function(e){
         chrome.tabs.executeScript({
           code:`
@@ -66,8 +43,6 @@ function checkIfKissAnime(v){
         });
       });
   } else {
-    destroyLink("kissmangaTodayLink");
-    destroyLink("kissmangaYesterdayLink");
     destroyLink("kissmangaOpenAllLink");
   }
 }
