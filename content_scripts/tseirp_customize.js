@@ -38,7 +38,10 @@ function createNextButton() {
   button.on("click", function (e) {
     chrome.runtime.sendMessage({requestType: "tseirpFindLatestOpenChapter", tab: window.location.href});
   });
-  $("body div.content").append(style, button);
+  let container = $("body div.content");
+	container.append(style, button);
+	container[0].scrollIntoView();
+
 }
 
 function getNextPageHref() {
