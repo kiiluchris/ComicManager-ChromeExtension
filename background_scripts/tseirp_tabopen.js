@@ -22,7 +22,7 @@ function findLatestOpenChapter(url) {
     let finishedChapter, novelUpdatesTab;
     for (var i = 0; i < tabs.length; i++) {
       let tab = tabs[i];
-      let m = /tseirptranslations.com\/20[\d]{2}\/[\d]{2}\/is-b([\d])c([\d]+)(p[\d])?.html/.exec(tab.url);
+      let m = /tseirptranslations.com\/20[\d]{2}\/[\d]{2}\/is-b([\d]+)c([\d]+)(p[\d]+)?.html/.exec(tab.url);
       if(tab.url === url){
         finishedChapter = getChapterValues(m, tab);
         chrome.tabs.remove(tab.id);

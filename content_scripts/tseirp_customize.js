@@ -62,7 +62,7 @@ function updateSelectedChapter(chapter) {
 }
 
 (function () {
-	if(/tseirptranslations.com\/20[\d]{2}\/[\d]{2}\/is-b[\d]c([\d]+).html/.test(window.location.href)){
+	if(/tseirptranslations.com\/20[\d]{2}\/[\d]{2}\/is-b[\d]+c([\d]+).html/.test(window.location.href)){
 	  createNextButton();
 	}
 }())
