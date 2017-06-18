@@ -11,9 +11,6 @@ chrome.runtime.onMessage.addListener(
             case "openWebtoonsReading":
               openWebtoonsReading(request.pages);
               break;
-            case "openKissanimeChapter":
-                openKissanimeChapter(request.offset);
-                break;
             case "hasWebtoonDraggable":
                 openWebtoonsDraggable(request.todayComics);
                 break;
@@ -88,34 +85,4 @@ function monitorWebtoonTabs(tabIds) {
           }
       }
   );
-}
-
-function openKissanimeChapter(offset){
-    chrome.tabs.query({
-        'windowId': chrome.windows.WINDOW_ID_CURRENT
-    }, function(tabs){
-        tabs
-          .filter((t) => t.url && /.*kissmanga.com\/Manga\/[^\/]+$/.test(t.url))
-          .forEach((t) => {
-              let id = t.id;
-              chrome.tabs.executeScript(id, {
-                code: `
-                var d = new Date();
-                d.setDate(d.getDate()-${offset});
-              	var t = (d) => (d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear();
-              	var date = t(d);
-                var columns = document.querySelectorAll('table.listing tbody tr td');
-                var urls = [];
-                for(var i = 1; i < columns.length; i+=2){
-                  if(columns[i].innerText===date){
-                    urls.unshift(columns[i-1].firstElementChild.href);
-                  }
-                }
-                if(urls.length){
-                  chrome.runtime.sendMessage({ requestType: "openPages", pages: urls, tabId: ${id} });
-                }
-                `
-              });
-          })
-    });
 }

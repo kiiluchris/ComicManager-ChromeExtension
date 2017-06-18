@@ -41,8 +41,8 @@
           "*://kissmanga.com/*"
         ],
         "request": {
-          "requestType": "openKissanimeChapter",
-          "offset": 0
+          "offset": 0,
+          "kissmanga": true
         }
       },{
         "title": "Open Yesterday's Comics",
@@ -51,8 +51,8 @@
           "*://kissmanga.com/*"
         ],
         "request": {
-          "requestType": "openKissanimeChapter",
-          "offset": 1
+          "offset": 1,
+          "kissmanga": true
         }
       },
       {

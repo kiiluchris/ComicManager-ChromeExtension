@@ -49,7 +49,6 @@ function checkIfKissAnime(v){
 
 
 function openPages(pages){
-  alert(pages);
   chrome.runtime.sendMessage({pages: pages,requestType: "openPages"}, function(res){
     window.close();
   });
