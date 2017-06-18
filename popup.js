@@ -87,7 +87,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     chrome.tabs.query({'active': true, 'windowId': chrome.windows.WINDOW_ID_CURRENT},
        function(tabs){
-          checkIfWebtoons(/http:\/\/www.webtoons.com\/favorite/.test(tabs[0].url), tabs[0].id);
           checkIfKissAnime(/http:\/\/kissmanga.com/.test(tabs[0].url));
        }
     );
