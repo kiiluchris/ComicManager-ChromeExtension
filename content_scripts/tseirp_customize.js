@@ -45,7 +45,7 @@ function createNextButton() {
 }
 
 function getNextPageHref() {
-	let nextPage = document.querySelectorAll("div div p span a")[1].href;
+	let nextPage = $("div div p a:contains(Next)")[0].href;
 	chrome.runtime.sendMessage({requestType:"openPages", pages: [nextPage]});
 }
 
