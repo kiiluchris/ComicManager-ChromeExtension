@@ -1,25 +1,15 @@
-let data;
-
 chrome.runtime.onInstalled.addListener(function() {
-    let xmlreq = new XMLHttpRequest();
-    xmlreq.open("GET", "background_scripts/context_menu.json", true);
-    xmlreq.onreadystatechange = function () {
-      if(this.readyState === 4 && this.status === 200){
-        data = JSON.parse(this.response);
-        for (var i = 0; i < data.menu_items.length; i++) {
-          let item = data.menu_items[i];
-          let r = item.request;
-          delete item.request;
-          chrome.contextMenus.create(item);
-          item.request = r;
-        }
-      }
-    };
-    xmlreq.send(null);
+  getConfig(function (data) {
+    for (var i = 0; i < data.menu_items.length; i++) {
+      let item = data.menu_items[i];
+      delete item.request;
+      chrome.contextMenus.create(item);
+    }
+  });
 });
 
 chrome.contextMenus.onClicked.addListener(function(info, tab) {
-    if(data){
+    getConfig(function(data){
       for (var i = 0; i < data.menu_items.length; i++) {
         let item = data.menu_items[i];
         if(item.id === info.menuItemId){
@@ -32,9 +22,18 @@ chrome.contextMenus.onClicked.addListener(function(info, tab) {
           break;
         }
       }
-    }
+    });
 });
-
+function getConfig(cb){
+  let xmlreq = new XMLHttpRequest();
+  xmlreq.open("GET", "background_scripts/context_menu.json", true);
+  xmlreq.onreadystatechange = function () {
+    if(this.readyState === 4 && this.status === 200){
+      cb(JSON.parse(this.response));
+    }
+  };
+  xmlreq.send(null);
+}
 function openKissanimeChapter(offset){
     chrome.tabs.query({
         'windowId': chrome.windows.WINDOW_ID_CURRENT
