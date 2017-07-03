@@ -2,29 +2,24 @@
 	"manifest_version": 2,
 	"name": "Comic Manager",
 	"version": "0.0.0.1",
-
 	"background" : {
 		"scripts" : [
 			"background_scripts/page_opener.js",
 			"background_scripts/data_manager.js",
 			"background_scripts/context_menu.js",
-			"background_scripts/tseirp_tabopen.js"
+			"background_scripts/tseirp_tabopen.js",
+			"background_scripts/novelupdates.js"
 		],
 		"persistent": false
 	},
-
 	"browser_action": {
 		"default_icon": "icons/icon16.png",
 		"default_popup": "popup.html"
-
 	},
 	"content_scripts": [{
 		"matches": [
-			"http://www.webtoons.com/favorite",
-			"http://www.webtoons.com/en/*/list?title_no=*",
-			"*://*.webtoons.com/en/*/viewer*",
-			"http://tseirptranslations.com/*/*/is-*.html",
-			"http://www.novelupdates.com/series/invincible-saint-salaryman-the-path-i-walk-to-survive-in-this-other-world/*"
+			"http://*/*",
+			"https://*/*"
 		],
 		"css": [
 			"libraries/css/selectize.default.min.css",
@@ -35,23 +30,22 @@
 			"libraries/js/selectize.min.js",
 			"libraries/js/jquery-ui.min.js",
 			"content_scripts/webtoons.js",
-			"content_scripts/tseirp_customize.js"
+			"content_scripts/tseirp_customize.js",
+			"content_scripts/novelupdates.js"
 		]
 	}],
 	"icons": {
 		"16": "icons/icon16.png",
 		"48": "icons/icon48.png",
 		"128": "icons/icon128.png"
-     },
+	},
 	"permissions": [
 		"activeTab",
 		"contextMenus",
 		"storage",
 		"tabs",
 		"management",
-		"http://www.webtoons.com/favorite",
-		"http://www.webtoons.com/en/*",
-		"http://kissmanga.com/Manga/*",
-		"http://localhost:8080/*"
+		"http://*/*",
+		"https://*/*"
 	]
 }
