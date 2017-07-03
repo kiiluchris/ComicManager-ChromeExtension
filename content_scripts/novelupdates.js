@@ -13,14 +13,8 @@ function checkBoxMonitor(){
        chrome.runtime.sendMessage({
          data: {
            url: e.target.href,
-           parent: window.location.href
          },
          requestType: "novelUpdatesOpenPage"
-       }, function (options) {
-         if(options && options.page){
-           let nextChapter = $("tr.newcolorme:not([style])").first().prev() || $("tr.newcolorme").last();
-           nextChapter.find("td a.chp-release")[0].click();
-         }
        });
        checkboxes[i].click();
        if(i === 0){
@@ -34,20 +28,34 @@ function checkBoxMonitor(){
   }
 }
 
-function monitorNovelUpdates(sendResponse) {
+function monitorNovelUpdates(options) {
   document.body.addEventListener("keydown", function(e){
     if(e.key === "ArrowRight" && e.ctrlKey){
-      sendResponse({ page: window.location.href });
+      chrome.runtime.sendMessage({
+        requestType: "novelUpdatesBGNext",
+        data: options
+      })
     }
   })
+}
+
+function novelUpdatesUINext(options) {
+  let nextChapter = $("tr.newcolorme:not([style])").first().prev()
+  if(nextChapter.length === 0){
+    nextChapter = $("tr.newcolorme").last();
+  }
+  nextChapter.find("td a.chp-release")[0].click();
 }
 
 chrome.runtime.onMessage.addListener(
     function(request,sender,sendResponse){
         switch(request.requestType){
             case "monitorNovelUpdates":
-                monitorNovelUpdates(sendResponse);
-                return true;
+                monitorNovelUpdates(request.data);
+                break;
+            case "novelUpdatesUINext":
+              novelUpdatesUINext(request.data);
+              break;
         }
     }
 );
