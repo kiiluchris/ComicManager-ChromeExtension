@@ -30,11 +30,18 @@ function checkBoxMonitor(){
 
 function monitorNovelUpdates(options) {
   document.body.addEventListener("keydown", function(e){
-    if(e.key === "ArrowRight" && e.ctrlKey){
-      chrome.runtime.sendMessage({
-        requestType: "novelUpdatesBGNext",
-        data: options
-      })
+    if(e.ctrlKey){
+      if(e.key === "ArrowRight"){
+        chrome.runtime.sendMessage({
+          requestType: "novelUpdatesBGNext",
+          data: options
+        });
+      } else if (e.key === "ArrowLeft") {
+        chrome.runtime.sendMessage({
+          requestType: "novelUpdatesRemoveFromStore",
+          data: options
+        });
+      }
     }
   })
 }
