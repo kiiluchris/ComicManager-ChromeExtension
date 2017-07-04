@@ -88,6 +88,9 @@ chrome.tabs.onUpdated.addListener(
         for (let key in novels) {
           if (novels.hasOwnProperty(key)) {
             chrome.tabs.query({url: key}, function (tabs) {
+              if (tabs.length === 0) {
+                return;
+              }
               let parent = tabs[0];
               for (var i = 0; i < novels[key].length; i++) {
                 let url = novels[key][i];
