@@ -19,7 +19,7 @@ function novelUpdatesOpenPage(options, sender, sendResponse) {
     url: options.url,
     active: false
   }, function (tab) {
-    waitForTabLoadThenMonitor(tab.id, sender);
+    waitForTabLoadThenMonitor(tab.id, sender, options);
   })
 }
 
@@ -36,11 +36,13 @@ function novelUpdatesRemoveFromStore(options) {
   });
 }
 
-function waitForTabLoadThenMonitor(mTabId, sender) {
+function waitForTabLoadThenMonitor(mTabId, sender, options) {
   chrome.tabs.onUpdated.addListener(
     function updateListener(tabId, changeInfo, tab){
       if(changeInfo.status === "complete" && mTabId === tabId){
-        saveCurrentNovelTab(sender.tab, tab);
+        if(options.save){
+          saveCurrentNovelTab(sender.tab, tab);
+        }
         chrome.tabs.sendMessage(tabId, {
           requestType: "monitorNovelUpdates",
           data: {

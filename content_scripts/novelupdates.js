@@ -13,6 +13,7 @@ function checkBoxMonitor(){
        chrome.runtime.sendMessage({
          data: {
            url: e.target.href,
+           save: !e.ctrlKey
          },
          requestType: "novelUpdatesOpenPage"
        });
