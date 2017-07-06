@@ -77,6 +77,9 @@ function deleteCurrentNovelTab(parent, current) {
     let key = parent.url.match(/.*\//)[0] + "*";
     if(novels[key]){
       novels[key] = novels[key].filter(url => url !== current.url);
+      if(novels[key].length === 0){
+        delete novels[key];
+      }
     }
     chrome.storage.local.set({novels: novels});
   });
