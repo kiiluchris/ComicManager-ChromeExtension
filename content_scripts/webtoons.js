@@ -28,7 +28,8 @@ function setupOverlays(titleOrder) {
       })
       sortedItems.reverse();
       $.each(sortedItems, function(){
-        $(list).prepend(this);
+        if(this)
+          $(list).prepend(this);
       })
       todayComics = $(list).find(listItems);
     }
