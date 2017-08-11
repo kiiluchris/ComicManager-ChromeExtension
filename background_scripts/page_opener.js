@@ -2,47 +2,58 @@ chrome.runtime.onMessage.addListener(
     function(request,sender,sendResponse){
         switch(request.requestType){
             case "hasWebtoon":
-                openWebtoons(request.todayComics, request.titleOrder);
-                break;
+            openWebtoons(request.todayComics, request.titleOrder);
+            break;
             case "openPages":
-                openPages(request.pages, request.tabId)
-                sendResponse();
-                break;
+            openPages(request.pages, request.tabId)
+            sendResponse();
+            break;
             case "openWebtoonsReading":
-              openWebtoonsReading(request.pages);
-              break;
+            openWebtoonsReading(request.pages);
+            break;
             case "hasWebtoonDraggable":
-                openWebtoonsDraggable(request.todayComics);
-                break;
+            openWebtoonsDraggable(request.todayComics);
+            break;
         }
     }
 );
- function openWebtoonsReading(urls){
-   chrome.tabs.query({windowId: chrome.windows.WINDOW_ID_CURRENT},
-     function (tabs) {
-       var tabUrls = tabs.map(function (t) {
-         return t.url;
-       });
-       urls = urls.filter(function (u) {
-         return tabUrls.indexOf(u) === -1;
-       }).slice(0,10);
-       openPages(urls);
-   })
- }
-function openPages(urls, tabId) {
-  urls.forEach((url) => {
-    chrome.tabs.create({
-        active: false,
-        url: url
-    });
-  });
-  if(tabId){
-    chrome.tabs.remove(tabId);
-  }
+
+
+function saveTitleOrder(order) {
+    let time = new Date();
+    if(time.getHours() >= 7){
+        chrome.storage.local.set({webtoonOrder:{
+            [time.getDay()]: order,
+        }})	
+    }
 }
 
-function openWebtoons(pages, titleOrder, i=0, tabIds=[]){
-    chrome.tabs.create({
+function openWebtoonsReading(urls){
+    chrome.tabs.query({windowId: chrome.windows.WINDOW_ID_CURRENT},
+        function (tabs) {
+            var tabUrls = tabs.map(function (t) {
+                return t.url;
+            });
+            urls = urls.filter(function (u) {
+                return tabUrls.indexOf(u) === -1;
+            }).slice(0,10);
+            openPages(urls);
+        })
+    }
+    function openPages(urls, tabId) {
+        urls.forEach((url) => {
+            chrome.tabs.create({
+                active: false,
+                url: url
+            });
+        });
+        if(tabId){
+            chrome.tabs.remove(tabId);
+        }
+    }
+    
+    function openWebtoons(pages, titleOrder, i=0, tabIds=[]){
+        chrome.tabs.create({
 			active: false,
 			url: pages[titleOrder[i]]
         },
@@ -56,9 +67,10 @@ function openWebtoons(pages, titleOrder, i=0, tabIds=[]){
     monitorWebtoonTabs(tabIds);
 }
 function openWebtoonsDraggable(pages) {
-  var tabIds = [];
-  for (var i = 0; i < pages.length; i++) {
-    chrome.tabs.create({
+    saveTitleOrder(pages);
+    var tabIds = [];
+    for (var i = 0; i < pages.length; i++) {
+        chrome.tabs.create({
 			active: false,
 			url: pages[i].link
         },
@@ -66,23 +78,23 @@ function openWebtoonsDraggable(pages) {
             tabIds.push(tab.id);
         }
     );
-  }
-  monitorWebtoonTabs(tabIds);
+}
+monitorWebtoonTabs(tabIds);
 }
 function monitorWebtoonTabs(tabIds) {
-  chrome.tabs.onUpdated.addListener(
-      function updateListener(tabId, changeInfo, tab){
-          if(changeInfo.status === "complete"){
-              var tabI = tabIds.indexOf(tabId);
-              if( tabI !== -1){
-                  chrome.tabs.executeScript(tabId, { code : 'document.querySelector(".detail_body .detail_lst a").click();'});
-                  tabIds.splice(tabI, 1);
-              }
-              if(tabIds.length===0){
-                  chrome.tabs.onUpdated.removeListener(updateListener);
-                  return;
-              }
-          }
-      }
-  );
+    chrome.tabs.onUpdated.addListener(
+        function updateListener(tabId, changeInfo, tab){
+            if(changeInfo.status === "complete"){
+                var tabI = tabIds.indexOf(tabId);
+                if( tabI !== -1){
+                    chrome.tabs.executeScript(tabId, { code : 'document.querySelector(".detail_body .detail_lst a").click();'});
+                    tabIds.splice(tabI, 1);
+                }
+                if(tabIds.length===0){
+                    chrome.tabs.onUpdated.removeListener(updateListener);
+                    return;
+                }
+            }
+        }
+    );
 }

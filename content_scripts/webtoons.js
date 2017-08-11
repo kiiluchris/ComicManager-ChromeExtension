@@ -1,4 +1,4 @@
-function setupOverlays() {
+function setupOverlays(titleOrder) {
   var list = "ul#_webtoonList";
   var listItems = "li:has(.txt_ico_up)";
   var listOverlays = `${listItems} div.overlay`;
@@ -16,7 +16,23 @@ function setupOverlays() {
         </div>
       </div>
       `);
-    //  &#10004; tick signx
+    if(titleOrder.length){
+      let sortedItems = new Array(titleOrder.length);
+      $.each(todayComics, function () {
+        let i = titleOrder.findIndex((el) => el.link === this.querySelector('a').href);
+        if(~i){
+          $(this).addClass('overlay-input-selected');
+          sortedItems[i] = this;
+          $(this).remove();
+        }
+      })
+      sortedItems.reverse();
+      $.each(sortedItems, function(){
+        $(list).prepend(this);
+      })
+      todayComics = $(list).find(listItems);
+    }
+        //  &#10004; tick signx
     //  &#10006; x
     send.on("click", function(e){
       var items =  $(`${list} ${listItems}`).filter(":has(input:checked)")
@@ -35,6 +51,11 @@ function setupOverlays() {
     div.append(input);
     div.find("."+overLaySpans).append(send,exit);
     todayComics.append(div);
+    $.each(todayComics, function(){
+      if($(this).hasClass('overlay-input-selected')){
+        this.querySelector('input').click();
+      }
+    })
     webtoonList.sortable({
       items: listItems
     });
@@ -146,7 +167,7 @@ chrome.runtime.onMessage.addListener(
             runPrompt();
             break;
           case "startPromptDraggable":
-            setupOverlays();
+            setupOverlays(request.titleOrder);
             break;
           case "openNextChapters":
             openNext10Chapters();
