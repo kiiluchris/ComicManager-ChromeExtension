@@ -161,6 +161,13 @@ function openNext10Chapters() {
       }).get();
   chrome.runtime.sendMessage({pages: links,requestType: "openWebtoonsReading"});
 }
+
+function scrollWebtoon(){
+  $('.viewer_lst .viewer_img img')
+    .each(function(){
+      this.src = $(this).data('url');
+    });
+}
 chrome.runtime.onMessage.addListener(
     function(request,sender,sendResponse){
         switch(request.requestType){
@@ -178,6 +185,9 @@ chrome.runtime.onMessage.addListener(
             break;
           case "clearWebtoonOverlayInputs":
             editOverlayInputs(false);
+            break;
+          case "scrollWebtoon":
+            scrollWebtoon();
             break;
         }
     }

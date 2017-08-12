@@ -58,7 +58,10 @@ function openWebtoonsReading(urls){
 			url: pages[titleOrder[i]]
         },
         function openFirstComic(tab){
-            tabIds.push(tab.id);
+            tabIds.push({
+                tab:tab.id,
+                val:0
+            });
         }
     );
     if(++i < titleOrder.length){
@@ -75,20 +78,29 @@ function openWebtoonsDraggable(pages) {
 			url: pages[i].link
         },
         function openFirstComic(tab){
-            tabIds.push(tab.id);
+            tabIds.push({
+                tab:tab.id,
+                val:0
+            });
         }
-    );
-}
-monitorWebtoonTabs(tabIds);
+        );
+    }
+    monitorWebtoonTabs(tabIds);
 }
 function monitorWebtoonTabs(tabIds) {
     chrome.tabs.onUpdated.addListener(
         function updateListener(tabId, changeInfo, tab){
             if(changeInfo.status === "complete"){
-                var tabI = tabIds.indexOf(tabId);
+                var tabI = tabIds.findIndex((el) => el.tab === tabId);
                 if( tabI !== -1){
-                    chrome.tabs.executeScript(tabId, { code : 'document.querySelector(".detail_body .detail_lst a").click();'});
-                    tabIds.splice(tabI, 1);
+                    let t = tabIds[tabI];
+                    if(t.val === 0){
+                        chrome.tabs.executeScript(tabId, { code : 'document.querySelector(".detail_body .detail_lst a").click();'});
+                        tabIds[tabI].val++;
+                    } else {
+                        chrome.tabs.sendMessage(tabId, {requestType: "scrollWebtoon"});
+                        tabIds.splice(tabI, 1);
+                    }
                 }
                 if(tabIds.length===0){
                     chrome.tabs.onUpdated.removeListener(updateListener);
