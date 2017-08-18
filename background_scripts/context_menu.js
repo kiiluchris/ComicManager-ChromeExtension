@@ -43,7 +43,7 @@ function getConfig(cb){
 function getTitleOrder(cb){
 	let time = new Date();
 	let todayI = time.getDay();
-	let dayI = time.getHours() > 7 ? todayI : 
+	let dayI = time.getUTCHours() >= 4 ? todayI : 
     todayI === 0 ? 6 : todayI - 1;
 	chrome.storage.local.get('webtoonOrder', function(data){
     cb(data.webtoonOrder[dayI] || []);

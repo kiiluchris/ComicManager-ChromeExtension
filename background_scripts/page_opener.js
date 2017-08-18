@@ -22,8 +22,8 @@ chrome.runtime.onMessage.addListener(
 function saveTitleOrder(order) {
     let time = new Date();
 	let todayI = time.getDay();
-	let dayI = time.getHours() > 7 ? todayI : 
-    todayI === 0 ? 6 : todayI - 1;
+	let dayI = time.getUTCHours() >= 4 ? todayI : 
+        todayI === 0 ? 6 : todayI - 1;
     chrome.storage.local.get('webtoonOrder', function(data){
         let oldOrder = data.webtoonOrder || {};
         oldOrder[todayI] = order;
