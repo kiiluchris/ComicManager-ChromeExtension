@@ -62,10 +62,14 @@ function saveCurrentNovelTab(parent, current) {
   chrome.storage.local.get("novels", function (data) {
     let novels = data.novels || {};
     let key = parent.url.match(/.*\//)[0] + "*";
+    let val = {
+      url: current.url,
+      time: Date.now()
+    };
     if(novels[key]){
-      novels[key].push(current.url);
+      novels[key].push(val);
     } else {
-      novels[key] = [current.url];
+      novels[key] = [val];
     }
     chrome.storage.local.set({novels: novels});
   });
@@ -76,7 +80,7 @@ function deleteCurrentNovelTab(parent, current) {
     let novels = data.novels || {};
     let key = parent.url.match(/.*\//)[0] + "*";
     if(novels[key]){
-      novels[key] = novels[key].filter(url => url !== current.url);
+      novels[key] = novels[key].filter(n => n.url !== current.url);
       if(novels[key].length === 0){
         delete novels[key];
       }
@@ -92,15 +96,26 @@ chrome.tabs.onUpdated.addListener(
         let novels = data.novels;
         for (let key in novels) {
           if (novels.hasOwnProperty(key)) {
+            if(novels[key].length === 0){
+              delete novels[key];
+              chrome.storage.local.set({novels});
+              return;
+            }
             chrome.tabs.query({url: key}, function (tabs) {
               if (tabs.length === 0) {
                 return;
               }
               let parent = tabs[0];
-              for (var i = 0; i < novels[key].length; i++) {
-                let url = novels[key][i];
-                if(tab.url === url){
-                  chrome.tabs.query({ url: url}, function (tabs) {
+              for (let i = 0; i < novels[key].length; i++) {
+                let novel = novels[key][i];
+                if(Date.now() - novel.time > 604800000){
+                  // One week has passed since item was added to the monitor
+                  novels[key].splice(i--, 1);
+                  chrome.storage.local.set({novels});
+                  return;
+                }
+                if(tab.url === novel.url){
+                  chrome.tabs.query({ url: novel}, function (tabs) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                       requestType: "monitorNovelUpdates",
                       data: {
@@ -119,3 +134,28 @@ chrome.tabs.onUpdated.addListener(
     }
   }
 );
+
+chrome.runtime.onInstalled.addListener(
+  function(details){
+    chrome.tabs.query({url:'http://www.novelupdates.com/series/*'}, function(tabs){
+      for (let i = 0; i < tabs.length; i++) {
+        chrome.tabs.reload(tabs[i].id)
+      }
+    });
+
+    chrome.storage.local.get("novels", function (data) {
+      let novels = data.novels;
+      for (let key in novels) {
+        if (novels.hasOwnProperty(key)) {
+          for (let i = 0; i < novels[key].length; i++) {
+            let novel = novels[key][i];
+            chrome.tabs.query({ url: novel.url}, function (tabs) {
+              if(tabs.length)
+                chrome.tabs.reload(tabs[0].id)
+            });
+          }
+        }
+      }
+    });
+  }
+)
