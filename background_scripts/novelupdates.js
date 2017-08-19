@@ -115,7 +115,7 @@ chrome.tabs.onUpdated.addListener(
                   return;
                 }
                 if(tab.url === novel.url){
-                  chrome.tabs.query({ url: novel}, function (tabs) {
+                  chrome.tabs.query({ url: novel.url}, function (tabs) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                       requestType: "monitorNovelUpdates",
                       data: {
