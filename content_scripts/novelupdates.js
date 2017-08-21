@@ -30,7 +30,7 @@ function checkBoxMonitor(){
 }
 
 function monitorNovelUpdates(options) {
-  document.body.addEventListener("keydown", function(e){
+  window.addEventListener("keydown", function(e){
     if(e.ctrlKey){
       if(e.key === "ArrowRight"){
         chrome.runtime.sendMessage({

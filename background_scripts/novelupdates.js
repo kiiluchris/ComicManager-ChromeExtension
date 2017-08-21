@@ -110,7 +110,7 @@ chrome.tabs.onUpdated.addListener(
                 let novel = novels[key][i];
                 if(Date.now() - novel.time > 604800000){
                   // One week has passed since item was added to the monitor
-                  novels[key].splice(i--, 1);
+                  let val = novels[key].splice(i, 1)[0];
                   chrome.storage.local.set({novels});
                   return;
                 }
