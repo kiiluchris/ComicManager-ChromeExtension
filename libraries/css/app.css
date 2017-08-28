@@ -1,33 +1,75 @@
 .overlay {
-  position: absolute;
-  background-color: rgba(40,220,24,0.4);
-  width: 100%;
-  height: 100%;
-  z-index: 10000;
-  top: 0;
-  text-align: center;
+    position: absolute;
+    /* background-color: rgba(40, 220, 24, 0.4); */
+    background-color: rgba(0, 230, 118, 0.4);
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    top: 0;
+    text-align: center;
 }
+
 .overlay input {
-  top:5%;
-  right: 5%;
-  position: absolute;
-  width: 20px;
-  height: 20px;
+    top: 5%;
+    right: 5%;
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    /* display: none; */
 }
+
 .overlay .overlay-spans {
-  position: absolute;
-  left: 0%;
-  top: 60%;
+    position: absolute;
+    left: 0%;
+    width: 100%;
+    top: 80%;
 }
 
 .overlay .overlay-spans span {
-  font-size: 20px;
-  background: rgba(255, 255, 255, 0.7);
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  position: relative;
-  display: inline-block;
-  margin-left: 5px;
-  cursor: pointer;
+    border-radius: 4px;
+    width: 40%;
+    margin: 0px 8px 4px 4px;
+    font-size: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    height: 30px;
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+
+/* input check style */
+
+.check .path1,
+.check .path2 {
+    stroke: #ddd;
+    stroke-width: 5;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+    transform-origin: 50% 50%;
+    transition: all 0.3s;
+}
+
+.check circle {
+    stroke: #ddd;
+    stroke-width: 5;
+    fill: none;
+    transition: fill 0.3s;
+}
+
+#check:checked+label circle {
+    stroke: #db4886;
+    fill: #db4886;
+}
+
+#check:checked+label .path1 {
+    transform: rotate(45deg) translate(15px, 2px);
+    stroke-dashoffset: 20;
+    stroke: #fff;
+}
+
+#check:checked+label .path2 {
+    transform: rotate(45deg) translate(25px, 30px);
+    stroke-dashoffset: 60;
+    stroke: #fff;
 }
