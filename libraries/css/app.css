@@ -58,6 +58,8 @@
     position: absolute;
     left: 28%;
     top: -30%;
+    height: 2px;
+    width: 2px;
 }
 
 .check circle {
