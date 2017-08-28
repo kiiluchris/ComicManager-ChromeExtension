@@ -7,22 +7,23 @@ function setupOverlays(titleOrder) {
         var spanButton = (text) => `<span>${text}</span>`;
         var webtoonList = $(list);
         var todayComics = webtoonList.find(listItems);
-        var input = $(`<input type="checkbox" id="check">`);
+        var input = $(`<input type="checkbox">`);
         var send = $(spanButton("open"));
         var exit = $(spanButton("cancel"));
-        var div = $(`
-      <div class="overlay">
+        var svg = $(`
         <label for="check" class="check">
           <svg width="250" height="180" style="transform:scale(0.3);">
             <circle cx="125" cy="90" r="60" />
             <path d="M125 40V140" class="path1"></path>
             <path d="M75 90H175" class="path2"></path>
           </svg>    
-        </label>
-        <div class="${overLaySpans}">
+        </label>`);
+        var div = $(`
+        <div class="overlay">
+            <div class="${overLaySpans}">
+            </div>
         </div>
-      </div>
-      `);
+        `);
         if (titleOrder.length) {
             let sortedItems = new Array(titleOrder.length);
             $.each(todayComics, function() {
@@ -42,6 +43,10 @@ function setupOverlays(titleOrder) {
         }
         //  &#10004; tick signx
         //  &#10006; x
+        svg.on('click', function(e){
+            $(this).toggleClass('selected');
+            $(this).siblings('input')[0].click();
+        });
         send.on("click", function(e) {
             var items = $(`${list} ${listItems}`).filter(":has(input:checked)")
                 .map(function() {
@@ -56,12 +61,13 @@ function setupOverlays(titleOrder) {
             }, removeOverlay);
         });
         exit.on("click", removeOverlay);
-        div.append(input);
+        div.append(input, svg);
         div.find("." + overLaySpans).append(send, exit);
         todayComics.append(div);
         $.each(todayComics, function() {
             if ($(this).hasClass('overlay-input-selected')) {
-                this.querySelector('input').click();
+                console.log(this)
+                this.querySelector('label.check').click();
             }
         })
         webtoonList.sortable({

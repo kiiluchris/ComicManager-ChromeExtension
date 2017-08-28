@@ -15,7 +15,7 @@
     position: absolute;
     width: 20px;
     height: 20px;
-    /* display: none; */
+    display: none;
 }
 
 .overlay .overlay-spans {
@@ -57,18 +57,18 @@
     transition: fill 0.3s;
 }
 
-#check:checked+label circle {
+label.selected circle {
     stroke: #db4886;
     fill: #db4886;
 }
 
-#check:checked+label .path1 {
+label.selected .path1 {
     transform: rotate(45deg) translate(15px, 2px);
     stroke-dashoffset: 20;
     stroke: #fff;
 }
 
-#check:checked+label .path2 {
+label.selected .path2 {
     transform: rotate(45deg) translate(25px, 30px);
     stroke-dashoffset: 60;
     stroke: #fff;
