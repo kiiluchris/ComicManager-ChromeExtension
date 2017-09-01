@@ -44,6 +44,13 @@ function monitorNovelUpdates(options) {
         });
       }
     }
+  });
+  $('a').on('click', function(e){
+    e.preventDefault();
+    chrome.runtime.sendMessage({
+      requestType: "replaceMonitorNovelUpdatesUrl",
+      data: {...options, url: this.href}
+    });
   })
 }
 

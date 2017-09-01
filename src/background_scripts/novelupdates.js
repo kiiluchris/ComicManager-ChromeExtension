@@ -1,25 +1,35 @@
 chrome.runtime.onMessage.addListener(
-    function(request,sender,sendResponse){
-        switch(request.requestType){
-            case "novelUpdatesOpenPage":
-                novelUpdatesOpenPage(request.data, sender, sendResponse);
-                break;
-            case "novelUpdatesBGNext":
-              novelUpdatesBGNext(Object.assign(request.data, {current:sender.tab}));
-              break;
-            case "novelUpdatesRemoveFromStore":
-              novelUpdatesRemoveFromStore(Object.assign(request.data, {current:sender.tab}));
-              break;
-        }
+  function(request,sender,sendResponse){
+    switch(request.requestType){
+      case "novelUpdatesOpenPage":
+      novelUpdatesOpenPage(request.data, sender, sendResponse);
+      break;
+      case "novelUpdatesBGNext":
+      novelUpdatesBGNext({...request.data, current:sender.tab});
+      break;
+      case "novelUpdatesRemoveFromStore":
+      novelUpdatesRemoveFromStore({...request.data, current:sender.tab});
+      break;
+      case "replaceMonitorNovelUpdatesUrl":
+      replaceMonitorNovelUpdatesUrl({...request.data, current: sender.tab});
+      break;
     }
+  }
 );
+
+function replaceMonitorNovelUpdatesUrl({current, parent, url}){
+  deleteCurrentNovelTab(parent, current);
+  chrome.tabs.update({url}, function(tab){
+    waitForTabLoadThenMonitor(tab.id, parent, {save: true});
+  })
+}
 
 function novelUpdatesOpenPage(options, sender, sendResponse) {
   chrome.tabs.create({
     url: options.url,
     active: false
   }, function (tab) {
-    waitForTabLoadThenMonitor(tab.id, sender, options);
+    waitForTabLoadThenMonitor(tab.id, sender.tab, options);
   })
 }
 
@@ -36,20 +46,21 @@ function novelUpdatesRemoveFromStore(options) {
   });
 }
 
-function waitForTabLoadThenMonitor(mTabId, sender, options) {
+function waitForTabLoadThenMonitor(mTabId, sender, options ={}) {
   chrome.tabs.onUpdated.addListener(
     function updateListener(tabId, changeInfo, tab){
       if(changeInfo.status === "complete" && mTabId === tabId){
         if(options.save){
-          saveCurrentNovelTab(sender.tab, tab);
+          saveCurrentNovelTab(sender, tab);
         }
         chrome.tabs.sendMessage(tabId, {
           requestType: "monitorNovelUpdates",
           data: {
-            parent: sender.tab,
+            parent: sender,
+            tabId
           }
         });
-
+        
         return chrome.tabs.onUpdated.removeListener(updateListener);
       }
     }
@@ -123,7 +134,7 @@ chrome.tabs.onUpdated.addListener(
                       }
                     });
                   });
-
+                  
                   return;
                 }
               }
@@ -138,24 +149,24 @@ chrome.tabs.onUpdated.addListener(
 chrome.runtime.onInstalled.addListener(
   function(details){
     chrome.tabs.query({url:'http://www.novelupdates.com/series/*'}, function(tabs){
-      for (let i = 0; i < tabs.length; i++) {
-        chrome.tabs.reload(tabs[i].id)
-      }
-    });
-
-    chrome.storage.local.get("novels", function (data) {
-      let novels = data.novels;
-      for (let key in novels) {
-        if (novels.hasOwnProperty(key)) {
-          for (let i = 0; i < novels[key].length; i++) {
-            let novel = novels[key][i];
-            chrome.tabs.query({ url: novel.url}, function (tabs) {
-              if(tabs.length)
-                chrome.tabs.reload(tabs[0].id)
-            });
-          }
+    for (let i = 0; i < tabs.length; i++) {
+      chrome.tabs.reload(tabs[i].id)
+    }
+  });
+  
+  chrome.storage.local.get("novels", function (data) {
+    let novels = data.novels;
+    for (let key in novels) {
+      if (novels.hasOwnProperty(key)) {
+        for (let i = 0; i < novels[key].length; i++) {
+          let novel = novels[key][i];
+          chrome.tabs.query({ url: novel.url}, function (tabs) {
+            if(tabs.length)
+              chrome.tabs.reload(tabs[0].id)
+          });
         }
       }
-    });
-  }
+    }
+  });
+}
 )

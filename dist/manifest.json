@@ -4,11 +4,7 @@
     "version": "0.0.0.1",
     "background": {
         "scripts": [
-            "background_scripts/webtoons.js",
-            "background_scripts/context_menu.js",
-            "background_scripts/tseirp_tabopen.js",
-            "background_scripts/novelupdates.js",
-            "background_scripts/general.js"
+            "background_scripts.js"
         ],
         "persistent": false
     },
@@ -21,18 +17,8 @@
             "http://*/*",
             "https://*/*"
         ],
-        "css": [
-            "libraries/css/selectize.default.min.css",
-            "libraries/css/app.css"
-        ],
         "js": [
-            "libraries/js/jquery.min.js",
-            "libraries/js/selectize.min.js",
-            "libraries/js/jquery-ui.min.js",
-            "content_scripts/webtoons.js",
-            "content_scripts/tseirp_customize.js",
-            "content_scripts/novelupdates.js",
-            "content_scripts/general.js"
+            "content_scripts.js"
         ]
     }],
     "icons": {

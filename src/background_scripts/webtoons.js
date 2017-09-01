@@ -18,6 +18,18 @@ chrome.runtime.onMessage.addListener(
     }
 );
 
+export function getTitleOrder() {
+  let time = new Date();
+  let todayI = time.getDay();
+  let dayI = time.getUTCHours() >= 4 ? todayI :
+      todayI === 0 ? 6 : todayI - 1;
+  return new Promise((res, rej) => {
+    chrome.storage.local.get('webtoonOrder', function(data) {
+        let order = data.webtoonOrder;
+        res(order && order[dayI] || []);
+    })
+  })
+}
 
 function saveTitleOrder(order) {
     let time = new Date();
