@@ -1,1 +1,3 @@
 src/node_modules
+dist/background_scripts.js
+dist/content_scripts.js

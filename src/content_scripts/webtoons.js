@@ -1,6 +1,5 @@
 'use strict';
 
-import 'jquery-ui/ui/widgets/draggable';
 import 'jquery-ui/ui/widgets/sortable';
 
 function setupOverlays(titleOrder) {
@@ -81,7 +80,7 @@ function setupOverlays(titleOrder) {
         chrome.runtime.sendMessage({ requestType: "closeWindow" });
 
         function removeOverlay(e) {
-            webtoonList.sortable('disable');
+            webtoonList.sortable('destroy');
             webtoonList.find(listOverlays).remove();
         }
     }
