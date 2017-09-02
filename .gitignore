@@ -1,3 +1,4 @@
-src/node_modules
-dist/background_scripts.js
-dist/content_scripts.js
+node_modules/
+dist/background_scripts.js*
+dist/content_scripts.js*
+webpack-extension-reloader/

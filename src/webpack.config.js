@@ -2,8 +2,9 @@
 
 const path = require('path');
 const webpack = require('webpack');
+require('dotenv').config();
 
-module.exports = {
+const config = {
     entry: {
         content_scripts: [
           "babel-polyfill",
@@ -45,6 +46,14 @@ module.exports = {
       new webpack.ProvidePlugin({
         $: 'jquery',
         jQuery: 'jquery',
-      })
+      }),
+      
     ]
+};
+
+if(process.env.NODE_ENV === 'development'){
+  config.plugins.push(new (require('../webpack-extension-reloader'))({}));
+  config.devtool = 'source-map';
 }
+
+module.exports = config;
