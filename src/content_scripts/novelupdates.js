@@ -55,8 +55,11 @@ function monitorNovelUpdates(options) {
 }
 
 function novelUpdatesUINext(options) {
-  let nextChapter = $("tr.newcolorme:not([style])").first().prev()
+  let nextChapter = $("tr.newcolorme:not([style])").first().prev();
   if(nextChapter.length === 0){
+    if($("div.digg_pagination em.current").index() === 0 && $("tr.newcolorme:not([style])").length){
+      return;
+    }
     nextChapter = $("tr.newcolorme").last();
   }
   nextChapter.find("td a.chp-release")[0].click();
