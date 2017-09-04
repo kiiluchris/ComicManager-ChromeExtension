@@ -19,7 +19,7 @@ chrome.runtime.onMessage.addListener(
 
 function replaceMonitorNovelUpdatesUrl({current, parent, url}){
   deleteCurrentNovelTab(parent, current);
-  chrome.tabs.update({url}, function(tab){
+  chrome.tabs.update(current.id, {url}, function(tab){
     waitForTabLoadThenMonitor(tab.id, parent, {save: true});
   })
 }
