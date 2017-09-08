@@ -5,7 +5,7 @@ chrome.runtime.onMessage.addListener(
                 openWebtoons(request.todayComics, request.titleOrder);
                 break;
             case "openPages":
-                openPages(request.pages, request.tabId)
+                openPages(request.pages, request.tabId, sender.tab.windowId)
                 sendResponse();
                 break;
             case "openWebtoonsReading":
@@ -56,9 +56,10 @@ function openWebtoonsReading(urls) {
         })
 }
 
-function openPages(urls, tabId) {
+function openPages(urls, tabId, windowId) {
     urls.forEach((url) => {
         chrome.tabs.create({
+            windowId,
             active: false,
             url: url
         });

@@ -14,7 +14,7 @@ function openURLsOnDay({id,offset}){
   }
   if(urls.length){
     if(urls.length > 5){
-      sendResponse(true);
+      return sendResponse(true);
     }
     chrome.runtime.sendMessage({ requestType: "openPages", pages: urls, tabId: id });
     sendResponse(false);
