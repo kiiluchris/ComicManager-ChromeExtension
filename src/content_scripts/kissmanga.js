@@ -1,6 +1,6 @@
 'use strict';
 
-function openURLsOnDay({id,offset}){
+function openURLsOnDay({id,offset, onlyTab}, sendResponse){
   var d = new Date();
   d.setDate(d.getDate()-offset);
   var t = (d) => (d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear();
@@ -13,7 +13,7 @@ function openURLsOnDay({id,offset}){
     }
   }
   if(urls.length){
-    if(urls.length > 5){
+    if(!onlyTab && urls.length > 5){
       return sendResponse(true);
     }
     chrome.runtime.sendMessage({ requestType: "openPages", pages: urls, tabId: id });

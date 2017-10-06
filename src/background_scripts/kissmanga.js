@@ -8,7 +8,7 @@ export function openKissmangaChapter(offset = 0) {
       for (let i = 0; i < tabs.length; i++) {
         let {id} = tabs[i];
         let comicsAreExcess = await new Promise((res) => {
-          chrome.tabs.sendMessage(id, {requestType: "kissmangaOpenDay", data: {offset,id}}, res);
+          chrome.tabs.sendMessage(id, {requestType: "kissmangaOpenDay", data: {offset,id,onlyTab:(tabs.length == 1)}}, res);
         });
         if(comicsAreExcess)
           return;
