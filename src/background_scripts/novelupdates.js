@@ -1,8 +1,13 @@
+import {get as httpGet} from 'axios';
+
 chrome.runtime.onMessage.addListener(
   function(request,sender,sendResponse){
     switch(request.requestType){
       case "novelUpdatesOpenPage":
-      novelUpdatesOpenPage(request.data, sender, sendResponse);
+      novelUpdatesOpenPage(request.data, sender);
+      break;
+      case "novelUpdatesOpenPageWayback":
+      novelUpdatesOpenPageWayback(request.data, sender);
       break;
       case "novelUpdatesBGNext":
       novelUpdatesBGNext({...request.data, current:sender.tab});
@@ -24,7 +29,7 @@ function replaceMonitorNovelUpdatesUrl({current, parent, url}){
   })
 }
 
-function novelUpdatesOpenPage(options, sender, sendResponse) {
+function novelUpdatesOpenPage(options, sender) {
   chrome.tabs.create({
     url: options.url,
     active: false
@@ -33,9 +38,27 @@ function novelUpdatesOpenPage(options, sender, sendResponse) {
   })
 }
 
+function novelUpdatesOpenPageWayback(options, sender){  
+  httpGet(`https://comic-manager.herokuapp.com?url=${options.url}`).then(({data}) => {
+    return httpGet(`http://archive.org/wayback/available?url=${data}`).then(({data}) => {
+      const {closest} = data.archived_snapshots;
+      if(closest){
+        novelUpdatesOpenPage({...options, url: closest.url}, sender);
+      } else {
+        alert('Url not available on wayback machine');
+      }
+    }).catch(e => console.error('Error in making request to wayback server'));
+  }).catch(e => console.error('Error in making request to manager server'));
+}
+
 function novelUpdatesBGNext(options) {
   chrome.tabs.sendMessage(options.parent.id, {
-    requestType: "novelUpdatesUINext"
+    requestType: "novelUpdatesUINext",
+    data: {
+      wayback: options.wayback,
+      tabId: options.tabId,
+      save: options.save
+    }
   });
   novelUpdatesRemoveFromStore(options);
 }
@@ -57,7 +80,8 @@ function waitForTabLoadThenMonitor(mTabId, sender, options ={}) {
           requestType: "monitorNovelUpdates",
           data: {
             parent: sender,
-            tabId
+            tabId,
+            ...options
           }
         });
         

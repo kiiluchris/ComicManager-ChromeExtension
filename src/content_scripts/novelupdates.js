@@ -9,13 +9,15 @@ function checkBoxMonitor(){
   const elements = [].slice.apply(document.querySelectorAll("table#myTable td a.chp-release"));
   for (let i = 0; i < elements.length; i++) {
      elements[i].addEventListener("click", function(e){
+       const wayback =  e.altKey;
        e.preventDefault();
        chrome.runtime.sendMessage({
          data: {
            url: e.target.href,
-           save: !e.ctrlKey
+           save: !e.ctrlKey,
+           wayback
          },
-         requestType: "novelUpdatesOpenPage"
+         requestType: wayback ? "novelUpdatesOpenPageWayback" : "novelUpdatesOpenPage"
        });
        checkboxes[i].click();
        if(i === 0){
@@ -62,7 +64,11 @@ function novelUpdatesUINext(options) {
     }
     nextChapter = $("tr.newcolorme").last();
   }
-  nextChapter.find("td a.chp-release")[0].click();
+  nextChapter.find("td a.chp-release")[0].dispatchEvent(new MouseEvent('click', {
+    altKey: !!options.wayback, 
+    ctrlKey: !options.save,
+    cancelable: true
+  }));
 }
 
 chrome.runtime.onMessage.addListener(
