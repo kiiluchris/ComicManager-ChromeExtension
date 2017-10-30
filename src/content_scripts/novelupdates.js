@@ -66,7 +66,7 @@ function novelUpdatesUINext(options) {
   }
   nextChapter.find("td a.chp-release")[0].dispatchEvent(new MouseEvent('click', {
     altKey: !!options.wayback, 
-    ctrlKey: !options.save,
+    ctrlKey: false,
     cancelable: true
   }));
 }

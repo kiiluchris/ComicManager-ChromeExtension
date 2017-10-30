@@ -40,15 +40,13 @@ function novelUpdatesOpenPage(options, sender) {
 
 function novelUpdatesOpenPageWayback(options, sender){  
   httpGet(`https://comic-manager.herokuapp.com?url=${options.url}`).then(({data}) => {
-    return httpGet(`http://archive.org/wayback/available?url=${data}`).then(({data}) => {
-      const {closest} = data.archived_snapshots;
-      if(closest){
-        novelUpdatesOpenPage({...options, url: closest.url}, sender);
-      } else {
-        alert('Url not available on wayback machine');
-      }
-    }).catch(e => console.error('Error in making request to wayback server'));
-  }).catch(e => console.error('Error in making request to manager server'));
+    const {closest} = data;
+    if(closest){
+      novelUpdatesOpenPage({...options, url: closest.url}, sender);
+    } else {
+      alert('Url not available on wayback machine');
+    }
+  }).catch(e => console.error(e.response.data));
 }
 
 function novelUpdatesBGNext(options) {
@@ -74,7 +72,7 @@ function waitForTabLoadThenMonitor(mTabId, sender, options ={}) {
     function updateListener(tabId, changeInfo, tab){
       if(changeInfo.status === "complete" && mTabId === tabId){
         if(options.save){
-          saveCurrentNovelTab(sender, tab);
+          saveCurrentNovelTab(sender, tab, options.wayback);
         }
         chrome.tabs.sendMessage(tabId, {
           requestType: "monitorNovelUpdates",
@@ -93,13 +91,14 @@ function waitForTabLoadThenMonitor(mTabId, sender, options ={}) {
 
 
 
-function saveCurrentNovelTab(parent, current) {
+function saveCurrentNovelTab(parent, current, wayback) {
   chrome.storage.local.get("novels", function (data) {
     let novels = data.novels || {};
     let key = parent.url.match(/.*\//)[0] + "*";
     let val = {
       url: current.url,
-      time: Date.now()
+      time: Date.now(),
+      wayback: !!wayback
     };
     if(novels[key]){
       novels[key].push(val);
@@ -154,7 +153,9 @@ chrome.tabs.onUpdated.addListener(
                     chrome.tabs.sendMessage(tabs[0].id, {
                       requestType: "monitorNovelUpdates",
                       data: {
-                        parent: parent,
+                        parent,
+                        tabId,
+                        ...novel
                       }
                     });
                   });
