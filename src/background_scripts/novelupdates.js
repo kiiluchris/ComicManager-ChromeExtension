@@ -1,126 +1,143 @@
 import {get as httpGet} from 'axios';
 
 chrome.runtime.onMessage.addListener(
-  function(request,sender,sendResponse){
+  async function(request,sender,sendResponse){
     switch(request.requestType){
       case "novelUpdatesOpenPage":
-      novelUpdatesOpenPage(request.data, sender);
+      await novelUpdatesOpenPage(request.data, sender);
       break;
       case "novelUpdatesOpenPageWayback":
-      novelUpdatesOpenPageWayback(request.data, sender);
+      await novelUpdatesOpenPageWayback(request.data, sender);
       break;
       case "novelUpdatesBGNext":
-      novelUpdatesBGNext({...request.data, current:sender.tab});
+      await novelUpdatesBGNext({...request.data, current:sender.tab});
       break;
       case "novelUpdatesRemoveFromStore":
-      novelUpdatesRemoveFromStore({...request.data, current:sender.tab});
+      await novelUpdatesRemoveFromStore({...request.data, current:sender.tab});
       break;
       case "replaceMonitorNovelUpdatesUrl":
-      replaceMonitorNovelUpdatesUrl({...request.data, current: sender.tab});
+      await replaceMonitorNovelUpdatesUrl({...request.data, current: sender.tab});
       break;
     }
   }
 );
 
-function replaceMonitorNovelUpdatesUrl({current, parent, url}){
-  deleteCurrentNovelTab(parent, current);
-  chrome.tabs.update(current.id, {url}, function(tab){
-    waitForTabLoadThenMonitor(tab.id, parent, {save: true});
-  })
+function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
+  return deleteCurrentNovelTab(parent, current)
+    .then(_ => (new Promise(res => {
+        chrome.tabs.update(current.id, {url}, res);
+      }).then(tab => waitForTabLoadThenMonitor(tab.id, parent, {save: true, wayback}))
+    ));
 }
 
 function novelUpdatesOpenPage(options, sender) {
-  chrome.tabs.create({
-    url: options.url,
-    active: false
-  }, function (tab) {
-    waitForTabLoadThenMonitor(tab.id, sender.tab, options);
-  })
+  return new Promise(res => {
+    chrome.tabs.create({
+      url: options.url,
+      active: false
+    },res);
+  }).then(tab => waitForTabLoadThenMonitor(tab.id, sender.tab, options)).catch(console.error);
 }
 
 function novelUpdatesOpenPageWayback(options, sender){  
-  httpGet(`https://comic-manager.herokuapp.com?url=${options.url}`).then(({data}) => {
+  return httpGet(`https://comic-manager.herokuapp.com?url=${options.url}`).then(({data}) => {
     const {closest} = data;
     if(closest){
-      novelUpdatesOpenPage({...options, url: closest.url}, sender);
+      return novelUpdatesOpenPage({...options, url: closest.url}, sender);
     } else {
-      alert('Url not available on wayback machine');
+      let e = new Error('Url not available on wayback machine');
+      e.response = {
+        data: 'Url not available on wayback machine'
+      };
+      throw e;
     }
   }).catch(e => console.error(e.response.data));
 }
 
 function novelUpdatesBGNext(options) {
-  chrome.tabs.sendMessage(options.parent.id, {
-    requestType: "novelUpdatesUINext",
-    data: {
-      wayback: options.wayback,
-      tabId: options.tabId,
-      save: options.save
-    }
-  });
-  novelUpdatesRemoveFromStore(options);
+  return new Promise(res => {
+    chrome.tabs.sendMessage(options.parent.id, {
+      requestType: "novelUpdatesUINext",
+      data: {
+        wayback: options.wayback,
+        tabId: options.tabId,
+        save: options.save
+      }
+    });
+    res(options);
+  }).then(novelUpdatesRemoveFromStore);
 }
 
 function novelUpdatesRemoveFromStore(options) {
-  chrome.tabs.remove(options.current.id, function () {
-    deleteCurrentNovelTab(options.parent, options.current);
-  });
+  return new Promise(res => {
+    chrome.tabs.remove(options.current.id, res);
+  }).then(_ => deleteCurrentNovelTab(options.parent, options.current))
 }
 
 function waitForTabLoadThenMonitor(mTabId, sender, options ={}) {
-  chrome.tabs.onUpdated.addListener(
-    function updateListener(tabId, changeInfo, tab){
-      if(changeInfo.status === "complete" && mTabId === tabId){
-        if(options.save){
-          saveCurrentNovelTab(sender, tab, options.wayback);
-        }
-        chrome.tabs.sendMessage(tabId, {
-          requestType: "monitorNovelUpdates",
-          data: {
+  return new Promise(res => {
+    chrome.tabs.onUpdated.addListener(
+      async function updateListener(tabId, changeInfo, tab){
+        if(changeInfo.status === "complete" && mTabId === tabId){
+          if(options.save){
+            await saveCurrentNovelTab(sender, tab, options.wayback);
+          }
+          const data = {
             parent: sender,
             tabId,
             ...options
-          }
-        });
-        
-        return chrome.tabs.onUpdated.removeListener(updateListener);
+          };
+          chrome.tabs.sendMessage(tabId, {
+            requestType: "monitorNovelUpdates",
+            data,
+          });
+          
+          chrome.tabs.onUpdated.removeListener(updateListener);
+          return res(data);
+        }
       }
-    }
-  );
+    );
+  })
 }
 
 
 
 function saveCurrentNovelTab(parent, current, wayback) {
-  chrome.storage.local.get("novels", function (data) {
-    let novels = data.novels || {};
-    let key = parent.url.match(/.*\//)[0] + "*";
-    let val = {
-      url: current.url,
-      time: Date.now(),
-      wayback: !!wayback
-    };
-    if(novels[key]){
-      novels[key].push(val);
-    } else {
-      novels[key] = [val];
-    }
-    chrome.storage.local.set({novels: novels});
-  });
+  return new Promise(res => {
+    chrome.storage.local.get("novels", function (data) {
+      let novels = data.novels || {};
+      let key = parent.url.match(/.*\//)[0] + "*";
+      let val = {
+        url: current.url,
+        time: Date.now(),
+        wayback: !!wayback
+      };
+      if(novels[key]){
+        novels[key].push(val);
+      } else {
+        novels[key] = [val];
+      }
+      chrome.storage.local.set({novels: novels});
+      res();
+    });
+  })
 }
 
 function deleteCurrentNovelTab(parent, current) {
-  chrome.storage.local.get("novels", function (data) {
-    let novels = data.novels || {};
-    let key = parent.url.match(/.*\//)[0] + "*";
-    if(novels[key]){
-      novels[key] = novels[key].filter(n => n.url !== current.url);
-      if(novels[key].length === 0){
-        delete novels[key];
+  return new Promise(res => {
+    chrome.storage.local.get("novels", function (data) {
+      let novels = data.novels || {};
+      let key = parent.url.match(/.*\//)[0] + "*";
+      if(novels[key]){
+        novels[key] = novels[key].filter(n => n.url !== current.url);
+        if(novels[key].length === 0){
+          delete novels[key];
+        }
       }
-    }
-    chrome.storage.local.set({novels: novels});
-  });
+      chrome.storage.local.set({novels: novels});
+      res();
+    });
+  })
 }
 
 chrome.tabs.onUpdated.addListener(
