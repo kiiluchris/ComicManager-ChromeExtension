@@ -15,6 +15,7 @@ const config = {
           path.join(__dirname, 'background_scripts'),
         ],
     },
+    devtool: 'source-map',
     output: {
         path: path.join(__dirname, "../dist"),
         filename: '[name].js',

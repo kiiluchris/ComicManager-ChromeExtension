@@ -45,13 +45,14 @@ function novelUpdatesOpenPageWayback(options, sender){
     if(closest){
       return novelUpdatesOpenPage({...options, url: closest.url}, sender);
     } else {
-      let e = new Error('Url not available on wayback machine');
-      e.response = {
-        data: 'Url not available on wayback machine'
-      };
-      throw e;
+      throw new Error('Url not available on wayback machine');
     }
-  }).catch(e => console.error(e.response.data));
+  }).catch(e => {
+    console.error(e);
+    if(e.response){
+      console.error(e.response.data);
+    }
+  });
 }
 
 function novelUpdatesBGNext(options) {
