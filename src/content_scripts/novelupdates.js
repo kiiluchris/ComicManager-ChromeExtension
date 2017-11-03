@@ -9,7 +9,7 @@ function checkBoxMonitor(){
   const elements = [].slice.apply(document.querySelectorAll("table#myTable td a.chp-release"));
   for (let i = 0; i < elements.length; i++) {
      elements[i].addEventListener("click", function(e){
-       const wayback =  e.altKey;
+       const wayback =  e.shiftKey;
        e.preventDefault();
        chrome.runtime.sendMessage({
          data: {
@@ -65,7 +65,7 @@ function novelUpdatesUINext(options) {
     nextChapter = $("tr.newcolorme").last();
   }
   nextChapter.find("td a.chp-release")[0].dispatchEvent(new MouseEvent('click', {
-    altKey: !!options.wayback, 
+    shiftKey: !!options.wayback, 
     ctrlKey: false,
     cancelable: true
   }));
