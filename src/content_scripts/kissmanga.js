@@ -21,7 +21,9 @@ function openURLsOnDay({id,offset, onlyTab}, sendResponse){
   }
 }
 
-function openNextChaptersKissmanga({current, parentURL, offset = 5}){
+function openNextChaptersKissmanga({current, offset = 5}){
+  const url = window.location.href;
+  const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
   const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?([\d\.]+)/i;
   const last = current + offset;
   const $select = $('select.selectChapter').first();
