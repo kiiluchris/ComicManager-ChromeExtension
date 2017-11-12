@@ -44,16 +44,15 @@ function saveTitleOrder(order) {
 }
 
 function openWebtoonsReading(urls) {
-    chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT },
-        function(tabs) {
-            var tabUrls = tabs.map(function(t) {
-                return t.url;
-            });
-            urls = urls.filter(function(u) {
-                return tabUrls.indexOf(u) === -1;
-            }).slice(0, 10);
-            openPages(urls);
-        })
+  chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT },function(tabs) {
+    var tabUrls = tabs.map(function(t) {
+        return t.url;
+    });
+    urls = urls.filter(function(u) {
+        return tabUrls.indexOf(u) === -1;
+    }).slice(0, 10);
+    openPages(urls);
+  });
 }
 
 function openPages(urls, tabId, windowId) {

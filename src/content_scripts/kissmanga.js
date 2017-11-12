@@ -21,13 +21,34 @@ function openURLsOnDay({id,offset, onlyTab}, sendResponse){
   }
 }
 
+function openNextChaptersKissmanga({current, parentURL, offset = 5}){
+  const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?([\d\.]+)/i;
+  const last = current + offset;
+  const $select = $('select.selectChapter').first();
+  const $chapters = $('option', $select);  
+  const nextChapters = $chapters.filter((i, el) => {
+    const chapter = chapterMatchingRe.exec(el.innerHTML);
+    if(chapter === null) return false;
+    const chapterFloat = parseFloat(chapter[1]);
+    return  chapterFloat > current && chapterFloat <= last;
+  }).get().map(el => parentURL + el.value);
+
+  chrome.runtime.sendMessage({
+    requestType: "openPages",
+    pages: nextChapters
+  });
+}
+
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-      switch (request.requestType) {
-          case "kissmangaOpenDay":
-              openURLsOnDay(request.data, sendResponse);
-              break;
-      }
-      return true;
+    switch (request.requestType) {
+      case "kissmangaOpenDay":
+        openURLsOnDay(request.data, sendResponse);
+        break;
+      case "openNextChaptersKissmanga":
+        openNextChaptersKissmanga(request.data);
+        break;
+    }
+    return true;
   }
 );

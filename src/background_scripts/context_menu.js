@@ -2,8 +2,8 @@
 import {openKissmangaChapter} from './kissmanga';
 import {getTitleOrder} from './webtoons';
 
-function defaultCB(tab, val){
-  chrome.tabs.sendMessage(tab.id, val);
+function defaultCB(tab, info, val){
+  chrome.tabs.sendMessage(tab.id, {requestType: info.menuItemId, ...val});
 }
 
 const callbacks = {
@@ -13,8 +13,38 @@ const callbacks = {
   openKissmangaToday(){
     openKissmangaChapter();
   },
-  async startPromptDraggable(tab, val){
-    defaultCB(tab, {...val, titleOrder: await getTitleOrder() })
+  async startPromptDraggable(tab, info){
+    defaultCB(tab, info, {titleOrder: await getTitleOrder() })
+  },
+  openNextChaptersKissmanga(tab, info){
+    const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?([\d\.]+)/i;
+    const {url, title} = tab;
+    const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
+    const currentTabChapter = chapterMatchingRe.exec(title);
+    if(currentTabChapter === null){
+      return alert('Chapter could not be parsed from the title');
+    }
+    let greatestChapter = parseFloat(currentTabChapter[1]);
+    chrome.tabs.query({url: parentURL + '*'}, tabs => {
+      for(let i = 0; i < tabs.length; i++){
+        const t = tabs[i];
+        const chapter = chapterMatchingRe.exec(t.title);
+        if(chapter !== null){
+          const chapterFloat = parseFloat(chapter[1]);
+          if(chapterFloat >  greatestChapter){
+            greatestChapter = chapterFloat;
+          } 
+        }
+      }
+      
+      defaultCB(tab, info, {
+        data: {
+          parentURL,
+          offset: 5,
+          current: greatestChapter
+        }
+      });
+    });
   }
 }
 const webtoonFavPattern = [
@@ -51,8 +81,16 @@ const contextMenuData = [
     title: "Open Yesterday's Comics",
     id: "openKissmangaYesterday",
     documentUrlPatterns: kissmangaAllPattern
-  },
-  {
+  },{
+    title: "Open next 5 chapters",
+    id: "openNextChaptersKissmanga",
+    documentUrlPatterns: [
+      "*://kissmanga.com/*?id=*"
+    ],
+    contexts: [
+      'all'
+    ]
+  },{
     title: "Open next chapter",
     id: "getTseirpNextChapter",
     documentUrlPatterns: [
@@ -69,6 +107,6 @@ chrome.runtime.onInstalled.addListener(function() {
 });
 
 chrome.contextMenus.onClicked.addListener(function(info, tab) {
-        (callbacks[info.menuItemId] || defaultCB)(tab, {requestType: info.menuItemId});
+        (callbacks[info.menuItemId] || defaultCB)(tab, info);
 });
 

@@ -27,26 +27,6 @@ function destroyLink(i){
 }
 
 
-function checkIfKissAnime(v){
-	if(v){
-      generateLink("kissmangaOpenAllLink", "Kissmanga Open All", function(e){
-        chrome.tabs.executeScript({
-          code:`
-          (function(){
-            const links = Array.from(document.querySelectorAll("table.listing tr td a"))
-              .reverse().map((el) => el.href)
-            chrome.runtime.sendMessage({pages: links,requestType: "openPages"});
-          }());
-          `
-        },function(){
-          window.close();
-        });
-      });
-  } else {
-    destroyLink("kissmangaOpenAllLink");
-  }
-}
-
 
 function openPages(pages){
   chrome.runtime.sendMessage({pages: pages,requestType: "openPages"}, function(res){
@@ -56,12 +36,6 @@ function openPages(pages){
 
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById("animeLink").addEventListener("click", function(e){
-      openPages(pages.anime);
-    });
-    document.getElementById("mangaLink").addEventListener("click", function(e){
-      openPages(pages.manga);
-    });
     document.getElementById("IDM").addEventListener("click", function(e){
       chrome.management.setEnabled("ngpampappnmepgilojfohadhhmbhlaek", false, function(){
         chrome.management.setEnabled("ngpampappnmepgilojfohadhhmbhlaek", true, function () {
@@ -84,11 +58,6 @@ document.addEventListener('DOMContentLoaded', function() {
         openPages(data.urls);
       })
     });
-    chrome.tabs.query({'active': true, 'windowId': chrome.windows.WINDOW_ID_CURRENT},
-       function(tabs){
-          checkIfKissAnime(/http:\/\/kissmanga.com/.test(tabs[0].url));
-       }
-    );
 });
 
 chrome.runtime.onMessage.addListener(
