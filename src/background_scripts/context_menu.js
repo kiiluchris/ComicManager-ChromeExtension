@@ -17,7 +17,7 @@ const callbacks = {
     defaultCB(tab, info, {titleOrder: await getTitleOrder() })
   },
   openNextChaptersKissmanga(tab, info){
-    const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?([\d\.]+)/i;
+    const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)/i;
     const {url, title} = tab;
     const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
     const currentTabChapter = chapterMatchingRe.exec(title);
