@@ -191,7 +191,7 @@ chrome.tabs.onUpdated.addListener(
 
 chrome.runtime.onInstalled.addListener(
   function(details){
-    chrome.tabs.query({url:'http://www.novelupdates.com/series/*'}, function(tabs){
+    chrome.tabs.query({url:'https://www.novelupdates.com/series/*'}, function(tabs){
     for (let i = 0; i < tabs.length; i++) {
       chrome.tabs.reload(tabs[i].id)
     }
