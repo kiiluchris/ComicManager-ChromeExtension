@@ -33,7 +33,7 @@ function openNextChaptersKissmanga({current, index, offset = 5, willClose = fals
       const chapter = chapterMatchingRe.exec(el.innerHTML);
       if(chapter === null) return false;
       const chapterFloat = parseFloat(chapter[1]);
-      return  chapterFloat > current && chapterFloat <= last;
+      return  chapterFloat > current && chapterFloat <= last + 0.1;
     })
     .get()
     .sort((a, b) => getCh(a) - getCh(b))
