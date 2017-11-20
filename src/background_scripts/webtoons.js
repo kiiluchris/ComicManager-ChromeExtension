@@ -1,22 +1,4 @@
-chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-        switch (request.requestType) {
-            case "hasWebtoon":
-                openWebtoons(request.todayComics, request.titleOrder);
-                break;
-            case "openPages":
-                openPages(request.pages, request.tabId, sender.tab.windowId)
-                sendResponse();
-                break;
-            case "openWebtoonsReading":
-                openWebtoonsReading(request.pages);
-                break;
-            case "hasWebtoonDraggable":
-                openWebtoonsDraggable(request.todayComics);
-                break;
-        }
-    }
-);
+import {openPages} from './index';
 
 export function getTitleOrder() {
   let time = new Date();
@@ -55,18 +37,6 @@ function openWebtoonsReading(urls) {
   });
 }
 
-function openPages(urls, tabId, windowId) {
-    urls.forEach((url) => {
-        chrome.tabs.create({
-            windowId,
-            active: false,
-            url: url
-        });
-    });
-    if (tabId) {
-        chrome.tabs.remove(tabId);
-    }
-}
 
 function openWebtoons(pages, titleOrder, i = 0, tabIds = []) {
     chrome.tabs.create({
@@ -128,3 +98,19 @@ function monitorWebtoonTabs(tabIds) {
         }
     );
 }
+
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+      switch (request.requestType) {
+          case "hasWebtoon":
+              openWebtoons(request.todayComics, request.titleOrder);
+              break;
+          case "openWebtoonsReading":
+              openWebtoonsReading(request.pages);
+              break;
+          case "hasWebtoonDraggable":
+              openWebtoonsDraggable(request.todayComics);
+              break;
+      }
+  }
+);

@@ -1,5 +1,7 @@
 'use strict';
 
+import {createTab} from './shared';
+
 export function openKissmangaChapter(offset = 0) {
   chrome.tabs.query({
       'windowId': chrome.windows.WINDOW_ID_CURRENT
@@ -15,3 +17,87 @@ export function openKissmangaChapter(offset = 0) {
       }
   });
 }
+
+function getNextChapterDetailsKissmanga(tab){
+  return new Promise(res => {
+    const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)/i;
+    const {url, title, id} = tab;
+    const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
+    const currentTabChapter = chapterMatchingRe.exec(title);
+    if(currentTabChapter === null){
+      return alert('Chapter could not be parsed from the title');
+    }
+    let greatestChapter = parseFloat(currentTabChapter[1]);
+    let greatestTabIndex = tab.index;
+    chrome.tabs.query({url: parentURL + '*'}, tabs => {
+      for(let i = 0; i < tabs.length; i++){
+        const t = tabs[i];
+        const chapter = chapterMatchingRe.exec(t.title);
+        if(chapter !== null){
+          const chapterFloat = parseFloat(chapter[1]);
+          if(chapterFloat >  greatestChapter){
+            greatestChapter = chapterFloat;
+            greatestTabIndex = t.index;
+          } 
+        }
+      }
+
+      res({greatestChapter, greatestTabIndex, parentURL});
+    });
+  }).catch(console.error);
+}
+
+export function openNextChaptersKissmanga(tab, {offset = 5}){
+  return getNextChapterDetailsKissmanga(tab)
+    .then(({greatestChapter, greatestTabIndex, parentURL}) => {      
+      chrome.tabs.sendMessage(tab.id, {
+        requestType: "openNextChaptersKissmanga",
+        data: {
+          current: greatestChapter,
+          index: greatestTabIndex,
+          parentURL,
+          offset,
+        }
+      });
+    });
+}
+
+function getLastChapterKissmanga(tab, sendResponse){
+  return getNextChapterDetailsKissmanga(tab)
+    .then(({greatestChapter, greatestTabIndex}) => {
+      sendResponse({
+        last: greatestChapter,
+        index: greatestTabIndex,
+      });
+    });
+}
+
+async function kissmangaOpenPages(tab, {urls, current, willClose, index}){
+  for (let i = 0; i < urls.length; i++) {
+    await createTab({
+      url: urls[i],
+      index: index + i + 1,
+    });
+  }
+  if(willClose){
+    chrome.tabs.remove(tab.id);
+  }
+}
+
+chrome.runtime.onMessage.addListener(
+  function(request,sender,sendResponse){
+    switch(request.requestType){
+      case "kissmangaOpenPages":
+        kissmangaOpenPages(sender.tab, request.data).catch(console.error);
+        break;
+      case "kissmangaOpenNext":
+        openNextChaptersKissmanga(sender.tab, {
+          offset: 1
+        });
+        break;
+      case "getLastChapterKissmanga":
+        getLastChapterKissmanga(sender.tab, sendResponse);
+        return true;
+    }
+  }
+);

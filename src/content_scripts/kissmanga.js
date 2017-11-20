@@ -21,7 +21,7 @@ function openURLsOnDay({id,offset, onlyTab}, sendResponse){
   }
 }
 
-function openNextChaptersKissmanga({current, offset = 5}){
+function openNextChaptersKissmanga({current, index, offset = 5, willClose = false}){
   const url = window.location.href;
   const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
   const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)/i;
@@ -37,14 +37,37 @@ function openNextChaptersKissmanga({current, offset = 5}){
     })
     .get()
     .sort((a, b) => getCh(a) - getCh(b))
+    .slice(0, offset)
     .map(el => parentURL + el.value);
 
   chrome.runtime.sendMessage({
-    requestType: "openPages",
-    pages: nextChapters
+    requestType: "kissmangaOpenPages",
+    data: {
+      urls: nextChapters,
+      current: last,
+      willClose,
+      index,
+    }
   });
 }
-
+;(function setupKissmangaNext(){
+  if(/kissmanga.com\/Manga.*\?id=/.test(window.location.href)){
+    window.addEventListener('keyup', (e) => {    
+      if(e.ctrlKey && e.key == 'ArrowRight'){
+        chrome.runtime.sendMessage({
+          requestType: 'getLastChapterKissmanga',
+        }, ({last, index}) => {
+          openNextChaptersKissmanga({
+            offset: 1,
+            willClose: true,
+            current: last,
+            index
+          });
+        })
+      }
+    });
+  }
+})();
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     switch (request.requestType) {

@@ -1,5 +1,5 @@
 'use strict';
-import {openKissmangaChapter} from './kissmanga';
+import {openKissmangaChapter, openNextChaptersKissmanga} from './kissmanga';
 import {getTitleOrder} from './webtoons';
 
 function defaultCB(tab, info, val){
@@ -16,36 +16,7 @@ const callbacks = {
   async startPromptDraggable(tab, info){
     defaultCB(tab, info, {titleOrder: await getTitleOrder() })
   },
-  openNextChaptersKissmanga(tab, info){
-    const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)/i;
-    const {url, title} = tab;
-    const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
-    const currentTabChapter = chapterMatchingRe.exec(title);
-    if(currentTabChapter === null){
-      return alert('Chapter could not be parsed from the title');
-    }
-    let greatestChapter = parseFloat(currentTabChapter[1]);
-    chrome.tabs.query({url: parentURL + '*'}, tabs => {
-      for(let i = 0; i < tabs.length; i++){
-        const t = tabs[i];
-        const chapter = chapterMatchingRe.exec(t.title);
-        if(chapter !== null){
-          const chapterFloat = parseFloat(chapter[1]);
-          if(chapterFloat >  greatestChapter){
-            greatestChapter = chapterFloat;
-          } 
-        }
-      }
-      
-      defaultCB(tab, info, {
-        data: {
-          parentURL,
-          offset: 5,
-          current: greatestChapter
-        }
-      });
-    });
-  }
+  openNextChaptersKissmanga,
 }
 const webtoonFavPattern = [
   "*://*.webtoons.com/favorite"

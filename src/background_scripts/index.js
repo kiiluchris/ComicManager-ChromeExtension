@@ -6,11 +6,15 @@ import './webtoons';
 
 chrome.runtime.onMessage.addListener(
   function(request,sender,sendResponse){
-      switch(request.requestType){
-          case "extensionTab":
-              extensionTab();
-              break;
-      }
+    switch(request.requestType){
+      case "extensionTab":
+        extensionTab();
+        break;
+      case "openPages":
+        openPages(request.pages, request.tabId, sender.tab.windowId)
+        sendResponse();
+        break;
+    }
   }
 );
 
@@ -19,4 +23,18 @@ function extensionTab(){
       url: "chrome://extensions",
       active: true
   })
+}
+
+
+export function openPages(urls, tabId, windowId) {
+  urls.forEach((url) => {
+      chrome.tabs.create({
+          windowId,
+          active: false,
+          url: url
+      });
+  });
+  if (tabId) {
+      chrome.tabs.remove(tabId);
+  }
 }
