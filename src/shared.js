@@ -42,7 +42,7 @@ export function kissmangaMatchChapter(el){
     chapter = /([\d\.]+)/.exec(text)
   }
   if(chapter === null){
-    throw new Error('Chapter number not found');
+    return null;
   }
 
   return parseFloat(chapter[1]);
