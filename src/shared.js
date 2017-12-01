@@ -37,11 +37,13 @@ export function monitorTabs(tabIds = [], cb) {
  */
 export function kissmangaMatchChapter(el){
   let text = el.innerHTML !== undefined ? el.innerHTML : el;
-  let chapterMatchingRe = /(?:(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)|([\d\.]+))/i;
-  const chapter = chapterMatchingRe.exec(text);
+  let chapter = /(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)/i.exec(text);
   if(chapter === null){
-    return null;
+    chapter = /([\d\.]+)/.exec(text)
+  }
+  if(chapter === null){
+    throw new Error('Chapter number not found');
   }
 
-  return parseFloat(chapter[1] || chapter[2]);
+  return parseFloat(chapter[1]);
 }
