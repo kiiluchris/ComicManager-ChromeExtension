@@ -1,15 +1,16 @@
 'use strict';
+import {kissmangaMatchChapter} from '../shared';
 
 function openURLsOnDay({id,offset, onlyTab}, sendResponse){
   var d = new Date();
   d.setDate(d.getDate()-offset);
-  var t = (d) => (d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear();
+  var t = (d) => `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
   var date = t(d);
-  var columns = document.querySelectorAll('table.listing tbody tr td');
+  var columns = document.querySelectorAll('table.listing tbody tr td:nth-child(2)');
   var urls = [];
-  for(var i = 1; i < columns.length; i+=2){
+  for(var i = 0; i < columns.length; i+=1){
     if(columns[i].innerText===date){
-      urls.unshift(columns[i-1].firstElementChild.href);
+      urls.unshift(columns[i].previousElementSibling.firstElementChild.href);
     }
   }
   if(urls.length){
@@ -24,19 +25,17 @@ function openURLsOnDay({id,offset, onlyTab}, sendResponse){
 function openNextChaptersKissmanga({current, index, offset = 5, willClose = false}){
   const url = window.location.href;
   const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
-  const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)/i;
   const last = current + offset;
   const $select = $('select.selectChapter').first();
   const $chapters = $('option', $select);  
-  const getCh = el => parseFloat(chapterMatchingRe.exec(el.innerHTML)[1]);
   const nextChapters = $chapters.filter((i, el) => {
-      const chapter = chapterMatchingRe.exec(el.innerHTML);
-      if(chapter === null) return false;
-      const chapterFloat = parseFloat(chapter[1]);
+      const chapterFloat = kissmangaMatchChapter(el);
+      if(chapterFloat === null) return false;
+      
       return  chapterFloat > current && chapterFloat <= last + 0.1;
     })
     .get()
-    .sort((a, b) => getCh(a) - getCh(b))
+    .sort((a, b) => kissmangaMatchChapter(a) - kissmangaMatchChapter(b))
     .slice(0, offset)
     .map(el => parentURL + el.value);
 

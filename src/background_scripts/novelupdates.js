@@ -64,8 +64,9 @@ function novelUpdatesBGNext(options) {
         tabId: options.tabId,
         save: options.save
       }
+    }, () => {
+      res(options);
     });
-    res(options);
   }).then(novelUpdatesRemoveFromStore);
 }
 

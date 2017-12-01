@@ -1,6 +1,6 @@
 'use strict';
 
-import {createTab} from './shared';
+import {createTab, kissmangaMatchChapter} from '../shared';
 
 export function openKissmangaChapter(offset = 0) {
   chrome.tabs.query({
@@ -20,25 +20,20 @@ export function openKissmangaChapter(offset = 0) {
 
 function getNextChapterDetailsKissmanga(tab){
   return new Promise(res => {
-    const chapterMatchingRe = /(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)/i;
     const {url, title, id} = tab;
     const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
-    const currentTabChapter = chapterMatchingRe.exec(title);
-    if(currentTabChapter === null){
+    let greatestChapter = kissmangaMatchChapter(title);
+    if(greatestChapter === null){
       return alert('Chapter could not be parsed from the title');
     }
-    let greatestChapter = parseFloat(currentTabChapter[1]);
     let greatestTabIndex = tab.index;
     chrome.tabs.query({url: parentURL + '*'}, tabs => {
       for(let i = 0; i < tabs.length; i++){
         const t = tabs[i];
-        const chapter = chapterMatchingRe.exec(t.title);
-        if(chapter !== null){
-          const chapterFloat = parseFloat(chapter[1]);
-          if(chapterFloat >  greatestChapter){
-            greatestChapter = chapterFloat;
-            greatestTabIndex = t.index;
-          } 
+        const chapterFloat = kissmangaMatchChapter(t.title);
+        if(chapterFloat !== null && chapterFloat >  greatestChapter){
+          greatestChapter = chapterFloat;
+          greatestTabIndex = t.index;
         }
       }
 

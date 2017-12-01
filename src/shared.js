@@ -27,3 +27,21 @@ export function monitorTabs(tabIds = [], cb) {
     }
   );
 }
+
+/**
+ * 
+ * 
+ * @export
+ * @param {(string|HTMLElement)} [el] The element or string being parsed
+ * @returns {(number|null)}
+ */
+export function kissmangaMatchChapter(el){
+  let text = el.innerHTML !== undefined ? el.innerHTML : el;
+  let chapterMatchingRe = /(?:(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)|([\d\.]+))/i;
+  const chapter = chapterMatchingRe.exec(text);
+  if(chapter === null){
+    return null;
+  }
+
+  return parseFloat(chapter[1] || chapter[2]);
+}
