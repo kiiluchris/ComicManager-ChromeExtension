@@ -1,38 +1,43 @@
 {
-    "manifest_version": 2,
-    "name": "Comic Manager",
-    "version": "0.0.0.1",
-    "background": {
-        "scripts": [
-            "background_scripts.js"
-        ],
-        "persistent": false
-    },
-    "browser_action": {
-        "default_icon": "icons/icon16.png",
-        "default_popup": "popup.html"
-    },
-    "content_scripts": [{
-        "matches": [
-            "http://*/*",
-            "https://*/*"
-        ],
-        "js": [
-            "content_scripts.js"
-        ]
-    }],
-    "icons": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
-    },
-    "permissions": [
-        "activeTab",
-        "contextMenus",
-        "storage",
-        "tabs",
-        "management",
+  "manifest_version": 2,
+  "name": "Comic Manager",
+  "version": "0.0.0.1",
+  "background": {
+    "scripts": [
+      "background_scripts.js"
+    ],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_icon": "icons/icon16.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
         "http://*/*",
         "https://*/*"
-    ]
+      ],
+      "js": [
+        "content_scripts.js"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
+  },
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage",
+    "tabs",
+    "management",
+    "http://*/*",
+    "https://*/*"
+  ]
 }

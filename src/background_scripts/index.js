@@ -38,3 +38,13 @@ export function openPages(urls, tabId, windowId) {
       chrome.tabs.remove(tabId);
   }
 }
+
+
+
+chrome.browserAction.onClicked.addListener(function(){
+  chrome.management.setEnabled("ngpampappnmepgilojfohadhhmbhlaek", false, function(){
+    chrome.management.setEnabled("ngpampappnmepgilojfohadhhmbhlaek", true, function () {
+      chrome.tabs.reload();
+    });
+  });
+})
