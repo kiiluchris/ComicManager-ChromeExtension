@@ -1,6 +1,7 @@
 node_modules/
 dist/background_scripts.js*
 dist/content_scripts.js*
+dist/options.*
 webpack-extension-reloader/
 .vscode/
 server

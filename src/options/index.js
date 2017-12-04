@@ -1,14 +1,17 @@
-import {importData, exportData, mergeJSONObjects} from './file';
+import {importData, exportData} from './file';
 
 (() => {
+  const res = {};
+  for(let i = 0; i < 7; i++){
+    res[i] = 'link'
+  }
   const cleanupKeys = ['webtoonOrder', 'novels'];
   const filterKeys = {
-    webtoonOrder: 'link'
+    ...res
   }
-  const seededKeys = ['webtoonOrder'];
   document.querySelector('main button#import')
     .addEventListener('click', () => {
-      importData({cleanupKeys, filterKeys, seededKeys}).catch(console.error);
+      importData({cleanupKeys, filterKeys}).catch(console.error);
     });
   document.querySelector('main button#export')
     .addEventListener('click', () => {
@@ -16,6 +19,6 @@ import {importData, exportData, mergeJSONObjects} from './file';
     });
   document.querySelector('main button#merge')
     .addEventListener('click', () => {
-      importData({cleanupKeys, filterKeys, seededKeys}, false).catch(console.error);
+      importData({cleanupKeys, filterKeys}, false).catch(console.error);
     });
 })();

@@ -29,7 +29,7 @@ export async function exportData(key=''){
 }
 
 
-export async function importData({seededKeys, keysForCleanup=[], filterKeys={}}, isReplacingData = true){
+export async function importData({cleanupKeys=[], filterKeys={}}, isReplacingData = true){
   return new Promise(async resolve => {
     const el = document.createElement('input');
     el.setAttribute('type', 'file');
@@ -40,14 +40,12 @@ export async function importData({seededKeys, keysForCleanup=[], filterKeys={}},
         const reader = new FileReader();
         reader.addEventListener('load', function(){
           return (async (res) => {
-            const data = cleanData(res, keysForCleanup);
+            const data = cleanData(res, cleanupKeys);
             if(isReplacingData){
               await setStorage(data);
             } else {
               const dataInStorage = await getStorage();
-              
               await setStorage(mergeJSONObjects(filterKeys)(data, dataInStorage));
-              
             }
           })(this.result).then(resolve).catch(console.error);
         });
@@ -66,12 +64,12 @@ export function mergeArrays(_key = '', filterKeys ={}){
       let hasChanged = false;
       if(
         typeof item === 'object' && 
-        key !== undefined &&
-        item[_key] !== undefined
+        key !== undefined
       ){
         let index;
         if(!Array.isArray(item)){
           if(
+            item[_key] !== undefined &&
             item[_key][key] !== undefined &&
             ~(index = result.findIndex(r => r[_key][key] === item[_key][key]))
           ){
@@ -83,7 +81,7 @@ export function mergeArrays(_key = '', filterKeys ={}){
           ){
             result[index] = mergeJSONObjects(filterKeys)(item, result[index]);
             hasChanged = true;
-          } else if(Array.isArray(item[_key])){
+          } else if(item[_key] !== undefined && Array.isArray(item[_key])){
             const {isInArray, subArr, subIndex} = checkItemInArray({_key, key, item, arr: result});
             if(isInArray){
               const itemVal = item[_key].slice();
