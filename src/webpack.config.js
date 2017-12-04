@@ -17,7 +17,7 @@ const config = {
     ],
     options: [
       "babel-polyfill",
-      path.join(__dirname, 'options'),
+      path.join(__dirname, 'options/options.js'),
     ],
   },
   devtool: 'source-map',

@@ -1,14 +1,6 @@
-import {importData, exportData} from './file';
+import {importData, exportData} from './extension';
 
-(() => {
-  const res = {};
-  for(let i = 0; i < 7; i++){
-    res[i] = 'link'
-  }
-  const cleanupKeys = ['webtoonOrder', 'novels'];
-  const filterKeys = {
-    ...res
-  }
+const setupOptionsListeners = ({cleanupKeys, filterKeys}) => {
   document.querySelector('main button#import')
     .addEventListener('click', () => {
       importData({cleanupKeys, filterKeys}).catch(console.error);
@@ -21,4 +13,6 @@ import {importData, exportData} from './file';
     .addEventListener('click', () => {
       importData({cleanupKeys, filterKeys}, false).catch(console.error);
     });
-})();
+};
+
+export default setupOptionsListeners;
