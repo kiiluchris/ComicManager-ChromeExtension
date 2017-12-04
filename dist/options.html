@@ -8,9 +8,9 @@
   <style>
     body { padding: 10px; }
     main {
-      display: flex;
-      align-content: center;
-      justify-content: center;
+      display: grid;    
+      grid-template-columns: repeat(3, 30%);
+      grid-column-gap: 5%;
     }
     main .btn {
       margin: 0 auto;
@@ -21,6 +21,7 @@
     <main>
       <button id="import" class="btn">Import Config</button>
       <button id="export" class="btn">Export Config</button>
+      <button id="merge" class="btn">Merge With Current Config</button>
     </main>
     <script src="options.js"></script>
 <script type="text/javascript" src="/options.js"></script></body>
