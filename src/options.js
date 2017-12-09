@@ -1,5 +1,4 @@
-import setupOptions from './index';
-
+import { setupOptionsListeners } from 'extension-kitchen-sink/import-export-storage';
 
 (() => {
   const res = {};
@@ -10,5 +9,6 @@ import setupOptions from './index';
   const filterKeys = {
     ...res
   }
-  setupOptions({cleanupKeys, filterKeys});
+
+  setupOptionsListeners({cleanupKeys, filterKeys});
 })();

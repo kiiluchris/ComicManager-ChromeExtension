@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "webpack -p",
-    "watch": "webpack -pw"
+    "build": "webpack",
+    "watch": "webpack -w"
   },
   "keywords": [],
   "author": "",
@@ -16,13 +16,15 @@
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "6.26.0",
     "babel-polyfill": "^6.26.0",
-    "babel-preset-env": "^1.6.0",
+    "babel-preset-env": "1.6.1",
     "chokidar": "^1.7.0",
     "css-loader": "^0.28.7",
     "dotenv": "^4.0.0",
+    "extension-kitchen-sink": "git+https://github.com/kiiluchris/extension-kitchen-sink.git",
     "raw-loader": "^0.5.1",
     "style-loader": "^0.18.2",
-    "webpack": "^3.5.5"
+    "uglifyjs-webpack-plugin": "1.1.2",
+    "webpack": "3.10.0"
   },
   "dependencies": {
     "axios": "0.17.0",
