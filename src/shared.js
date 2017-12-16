@@ -1,3 +1,5 @@
+import moment from 'moment-timezone';
+
 export function createTab(options = {}){
   return new Promise(res => {
     chrome.tabs.create({
@@ -46,4 +48,10 @@ export function kissmangaMatchChapter(el){
   }
 
   return parseFloat(chapter[1]);
+}
+
+export function getWebtoonDate(offset = 0){
+  return moment(new Date().toISOString())
+    .tz('America/New_york')
+    .subtract(offset, 'days');
 }

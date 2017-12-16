@@ -6,6 +6,17 @@ function defaultCB(tab, info, val){
   chrome.tabs.sendMessage(tab.id, {requestType: info.menuItemId, ...val});
 }
 
+async function webtoonPrompt(tab, info, data = {}){
+  defaultCB(tab, info, {
+    data: {
+      titleOrder: await getTitleOrder({
+        offset: data.offset
+      }),
+      ...data
+    }
+  })
+}
+
 const callbacks = {
   openKissmangaYesterday(){
     openKissmangaChapter(1);
@@ -13,8 +24,13 @@ const callbacks = {
   openKissmangaToday(){
     openKissmangaChapter();
   },
-  async startPromptDraggable(tab, info){
-    defaultCB(tab, info, {titleOrder: await getTitleOrder() })
+  startPromptDraggable(tab, info){
+    webtoonPrompt(tab, info).catch(console.error);
+  },
+  startPromptDraggableYesterday(tab, info){
+    webtoonPrompt(tab, info, {
+      offset: 1
+    }).catch(console.error);
   },
   openNextChaptersKissmanga,
 }
@@ -34,6 +50,10 @@ const contextMenuData = [
   },{
     title: "Open Prompt(Overlay)",
     id: "startPromptDraggable",
+    documentUrlPatterns: webtoonFavPattern
+  },{
+    title: "Open Prompt Yesterday(Overlay)",
+    id: "startPromptDraggableYesterday",
     documentUrlPatterns: webtoonFavPattern
   },{
     title: "Select all comics",
@@ -71,13 +91,13 @@ const contextMenuData = [
 ]
 
 chrome.runtime.onInstalled.addListener(function() {
-    for (var i = 0; i < contextMenuData.length; i++) {
-        let {cb, ...item} = contextMenuData[i];
-        chrome.contextMenus.create(item);
-    }
+  for (var i = 0; i < contextMenuData.length; i++) {
+    let {cb, ...item} = contextMenuData[i];
+    chrome.contextMenus.create(item);
+  }
 });
 
 chrome.contextMenus.onClicked.addListener(function(info, tab) {
-        (callbacks[info.menuItemId] || defaultCB)(tab, info);
+  (callbacks[info.menuItemId] || defaultCB)(tab, info);
 });
 
