@@ -110,12 +110,18 @@ function editOverlayInputs(selectAll) {
     .trigger("click");
 }
 
-function openNext10Chapters() {
+function openNextChapters({numOfChapters}) {
   var links = $("div#topEpisodeList .episode_cont ul li:has(a.on)").nextAll()
   .map(function() {
     return $(this).children("a").attr("href");
   }).get();
-  chrome.runtime.sendMessage({ pages: links, requestType: "openWebtoonsReading" });
+  chrome.runtime.sendMessage({  
+    requestType: "openWebtoonsReading",
+    data: {
+      urls: links, 
+      numOfChapters
+    }
+  });
 }
 
 function scrollWebtoon() {
@@ -132,7 +138,7 @@ chrome.runtime.onMessage.addListener(
       setupOverlays(request.data);
       break;
       case "openNextChaptersWebtoons":
-      openNext10Chapters();
+      openNextChapters(request.data);
       break;
       case "fillWebtoonOverlayInputs":
       editOverlayInputs(true);

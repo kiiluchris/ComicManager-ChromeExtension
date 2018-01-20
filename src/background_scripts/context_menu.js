@@ -33,6 +33,14 @@ const callbacks = {
     }).catch(console.error);
   },
   openNextChaptersKissmanga,
+  openNextChaptersWebtoons(tab, info){
+    defaultCB(tab, info, {
+      requestType: info.parentMenuItemId,
+      data: {
+        numOfChapters: parseInt(info.menuItemId.match(/\d+$/))
+      }
+    });
+  }
 }
 const webtoonFavPattern = [
   "*://*.webtoons.com/favorite"
@@ -42,7 +50,7 @@ const kissmangaAllPattern = [
 ];
 const contextMenuData = [
   {
-    title: "Open next 10 chapters",
+    title: "Open next number of chapters",
     id: "openNextChaptersWebtoons",
     documentUrlPatterns: [
       "*://*.webtoons.com/en/*/viewer*"
@@ -88,7 +96,20 @@ const contextMenuData = [
       "*://tseirptranslations.com/*/is-*.html"
     ]
   }
-]
+];
+
+for(let i = 1; i < 4; i++){
+  const num = i * 5;
+  contextMenuData.push({
+    title: `${num} chapters`,
+    id: `openNextChaptersWebtoons${num}`,
+    parentId: "openNextChaptersWebtoons",
+    documentUrlPatterns: [
+      "*://*.webtoons.com/en/*/viewer*"
+    ]
+  });
+}
+
 
 chrome.runtime.onInstalled.addListener(function() {
   for (var i = 0; i < contextMenuData.length; i++) {
@@ -98,6 +119,6 @@ chrome.runtime.onInstalled.addListener(function() {
 });
 
 chrome.contextMenus.onClicked.addListener(function(info, tab) {
-  (callbacks[info.menuItemId] || defaultCB)(tab, info);
+  (callbacks[info.parentMenuItemId] || callbacks[info.menuItemId] || defaultCB)(tab, info);
 });
 

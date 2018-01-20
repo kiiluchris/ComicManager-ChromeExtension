@@ -22,14 +22,14 @@ function saveTitleOrder({order, offset} = {}) {
   });
 }
 
-function openWebtoonsReading(urls) {
+function openWebtoonsReading({urls, numOfChapters}) {
   chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT },function(tabs) {
     var tabUrls = tabs.map(function(t) {
       return t.url;
     });
     urls = urls.filter(function(u) {
       return tabUrls.indexOf(u) === -1;
-    }).slice(0, 10);
+    }).slice(0, numOfChapters);
     openPages(urls);
   });
 }
@@ -79,7 +79,7 @@ chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     switch (request.requestType) {
       case "openWebtoonsReading":
-      openWebtoonsReading(request.pages);
+      openWebtoonsReading(request.data);
       break;
       case "hasWebtoonDraggable":
       openWebtoonsDraggable(request.data);
