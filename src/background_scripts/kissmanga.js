@@ -30,10 +30,12 @@ function getNextChapterDetailsKissmanga(tab){
     chrome.tabs.query({url: parentURL + '*'}, tabs => {
       for(let i = 0; i < tabs.length; i++){
         const t = tabs[i];
-        const chapterFloat = kissmangaMatchChapter(t.title);
-        if(chapterFloat !== null && chapterFloat >  greatestChapter){
-          greatestChapter = chapterFloat;
-          greatestTabIndex = t.index;
+        if(t.url + '/' !== parentURL){
+          const chapterFloat = kissmangaMatchChapter(t.title);
+          if(chapterFloat !== null && chapterFloat >  greatestChapter){
+            greatestChapter = chapterFloat;
+            greatestTabIndex = t.index;
+          }
         }
       }
 
