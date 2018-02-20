@@ -55,6 +55,9 @@ const config = {
     ]
   },
   plugins: [
+    new (require('./chrome-reloader'))({
+      bgScript: 'background_scripts.js',
+    }),
     new webpack.ProvidePlugin({
       $: 'jquery',
       jQuery: 'jquery',
@@ -67,7 +70,7 @@ const config = {
     new UglifyJSWebpackPlugin({
       sourceMap: true,
       uglifyOptions: { ecma: 8 },
-    })
+    }),
   ]
 };
 

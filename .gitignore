@@ -4,3 +4,4 @@ dist/content_scripts.js*
 dist/options.*
 .vscode/
 server
+timestamp*
