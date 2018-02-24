@@ -142,51 +142,70 @@ function deleteCurrentNovelTab(parent, current) {
   })
 }
 
+function getNovels(){
+  return new Promise(res => 
+    chrome.storage.local.get("novels", function ({novels = {}} = {}) {
+      res(novels);
+    })
+  );
+}
+
+function filterOutWeekOldNovels(novels = [], data = []){
+  if(novels.length === 0) return data;
+  const novel = novels.shift();
+  if(Date.now() - novel.time < 259200000){
+    // 3 days not passed since item was added to the monitor
+    data.push(novel);
+  }
+
+  return filterOutWeekOldNovels(novels, data);
+}
+
+function cleanNovels(novels = {}, data = {}){
+  const novelKeys = Object.keys(novels);
+  if(novelKeys.length === 0) return Object.freeze(data);
+  const key = novelKeys[0];
+  if(novels.hasOwnProperty(key)){
+    const novelChapters = filterOutWeekOldNovels(novels[key]);
+    delete novels[key];
+    if(novelChapters.length !== 0 ){
+      data[key] = novelChapters;
+    }
+  }
+
+  return cleanNovels(novels, data);
+}
+
 chrome.tabs.onUpdated.addListener(
   function check(tabId, changeInfo, tab) {
-    if(changeInfo.status === "complete"){
-      chrome.storage.local.get("novels", function (data) {
-        let novels = data.novels;
-        for (let key in novels) {
-          if (novels.hasOwnProperty(key)) {
-            if(novels[key].length === 0){
-              delete novels[key];
-              chrome.storage.local.set({novels});
-              return;
-            }
-            chrome.tabs.query({url: key}, function (tabs) {
-              if (tabs.length === 0) {
-                return;
-              }
-              let parent = tabs[0];
-              for (let i = 0; i < novels[key].length; i++) {
-                let novel = novels[key][i];
-                if(Date.now() - novel.time > 604800000){
-                  // One week has passed since item was added to the monitor
-                  let val = novels[key].splice(i, 1)[0];
-                  chrome.storage.local.set({novels});
-                  return;
-                }
-                if(tab.url === novel.url){
-                  chrome.tabs.query({ url: novel.url}, function (tabs) {
-                    chrome.tabs.sendMessage(tabs[0].id, {
-                      requestType: "monitorNovelUpdates",
-                      data: {
-                        parent,
-                        tabId,
-                        ...novel
-                      }
-                    });
-                  });
-                  
-                  return;
-                }
-              }
-            })
-          }
+    return async function(){
+      if(changeInfo.status === "complete"){
+        const novels = await getNovels();
+        if(Object.keys(novels).length === 0){
+          return;
         }
-      });
-    }
+        const cleanedNovels = cleanNovels(novels);
+        chrome.storage.local.set({novels: cleanedNovels});
+        chrome.tabs.query({url: 'https://www.novelupdates.com/series/*'}, async function(tabs){
+          if(tabs.length !== 0){
+            for(const key in cleanedNovels){
+              const novel = cleanedNovels[key].find(ch => ch.url === tab.url);
+              if(novel){
+                const parent = tabs.find(t => t.url + '*' === key);
+                return parent && chrome.tabs.sendMessage(tab.id, {
+                  requestType: "monitorNovelUpdates",
+                  data: {
+                    parent,
+                    tabId: tab.id,
+                    ...novel
+                  }
+                });
+              }
+            }
+          }
+        });
+      }
+    }().catch(console.error);
   }
 );
 
