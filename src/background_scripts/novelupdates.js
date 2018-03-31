@@ -208,7 +208,7 @@ chrome.tabs.onUpdated.addListener(
             for(const key in cleanedNovels){
               const novel = cleanedNovels[key].find(ch => ch.url === tab.url);
               if(novel){
-                const parent = tabs.find(t => t.url + '*' === key);
+                const parent = tabs.find(t => new RegExp(key.replace('*', '.*')).test(t.url));
                 return parent && chrome.tabs.sendMessage(tab.id, {
                   requestType: "monitorNovelUpdates",
                   data: {
