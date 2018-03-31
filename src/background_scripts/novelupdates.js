@@ -2,23 +2,28 @@ import {get as httpGet} from 'axios';
 
 chrome.runtime.onMessage.addListener(
   async function(request,sender,sendResponse){
+    let res;
     switch(request.requestType){
       case "novelUpdatesOpenPage":
-      await novelUpdatesOpenPage(request.data, sender);
-      break;
+        res = novelUpdatesOpenPage(request.data, sender);
+        break;
       case "novelUpdatesOpenPageWayback":
-      await novelUpdatesOpenPageWayback(request.data, sender);
-      break;
+        res = novelUpdatesOpenPageWayback(request.data, sender);
+        break;
       case "novelUpdatesBGNext":
-      await novelUpdatesBGNext({...request.data, current:sender.tab});
-      break;
+        res = novelUpdatesBGNext({...request.data, current:sender.tab});
+        break;
       case "novelUpdatesRemoveFromStore":
-      await novelUpdatesRemoveFromStore({...request.data, current:sender.tab});
-      break;
+        res = novelUpdatesRemoveFromStore({...request.data, current:sender.tab});
+        break;
       case "replaceMonitorNovelUpdatesUrl":
-      await replaceMonitorNovelUpdatesUrl({...request.data, current: sender.tab});
-      break;
+        res = replaceMonitorNovelUpdatesUrl({...request.data, current: sender.tab});
+        break;
+      default:
+        return;
     }
+    res.then(sendResponse);
+    return true;
   }
 );
 
@@ -53,7 +58,7 @@ async function novelUpdatesOpenPage(options, sender) {
       ...newTabData
     },res);
   });
-  return waitForTabLoadThenMonitor(tab.id, sender.tab, options).catch(console.error);
+  return await waitForTabLoadThenMonitor(tab.id, sender.tab, options).catch(console.error);
 }
 
 function novelUpdatesOpenPageWayback(options, sender){  
