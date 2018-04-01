@@ -111,7 +111,8 @@ function saveCurrentNovelTab(parent, current, wayback) {
       let val = {
         url: current.url,
         time: Date.now(),
-        wayback: !!wayback
+        wayback: !!wayback,
+        page: parent.url
       };
       if(novels[key]){
         novels[key].push(val);
