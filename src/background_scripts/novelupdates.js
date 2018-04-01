@@ -36,25 +36,27 @@ async function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
 }
 
 async function novelUpdatesOpenPage(options, sender) {
-  const novels = await getNovels();
-  const parentURL = sender.tab.url.match(/.*\//)[0] + "*";
   const newTabData = {};
-  if(novels.hasOwnProperty(parentURL)){
-    newTabData.index =  sender.tab.index + 1;
-    const tabs = await new Promise(res => {
-      chrome.tabs.query({}, res)
-    });
-    const urls = novels[parentURL].map(({url}) => url);
-    for(const tab of tabs){
-      if(urls.includes(tab.url)){
-        newTabData.index = Math.max(newTabData.index, tab.index + 1);
-      }
-    }
-  }
   const {url} = await fetch(options.url, {method: 'HEAD'});
   if(options.save){
+    const novels = await getNovels();
+    const parentURL = sender.tab.url.match(/.*\//)[0] + "*";
+    if(novels.hasOwnProperty(parentURL)){
+      newTabData.index =  sender.tab.index + 1;
+      const tabs = await new Promise(res => {
+        chrome.tabs.query({}, res)
+      });
+      const urls = novels[parentURL].map(({url}) => url);
+      for(const tab of tabs){
+        if(urls.includes(tab.url)){
+          newTabData.index = Math.max(newTabData.index, tab.index + 1);
+        }
+      }
+    }
+    
     await saveCurrentNovelTab(sender.tab, {url}, options.wayback);
   }
+
   return await new Promise(res => {
     chrome.tabs.create({
       url,
