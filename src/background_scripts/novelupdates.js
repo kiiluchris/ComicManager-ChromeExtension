@@ -27,12 +27,12 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
-function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
-  return deleteCurrentNovelTab(parent, current)
-    .then(_ => (new Promise(res => {
-        chrome.tabs.update(current.id, {url}, res);
-      }).then(tab => waitForTabLoadThenMonitor(tab.id, parent, {save: true, wayback}))
-    ));
+async function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
+  await deleteCurrentNovelTab(parent, current);
+  await saveCurrentNovelTab(parent, {url}, wayback);
+  return await new Promise(res => {
+    chrome.tabs.update(current.id, {url}, res);
+  })
 }
 
 async function novelUpdatesOpenPage(options, sender) {
@@ -51,14 +51,17 @@ async function novelUpdatesOpenPage(options, sender) {
       }
     }
   }
-  const tab = await new Promise(res => {
+  const {url} = await fetch(options.url, {method: 'HEAD'});
+  if(options.save){
+    await saveCurrentNovelTab(sender.tab, {url}, options.wayback);
+  }
+  return await new Promise(res => {
     chrome.tabs.create({
-      url: options.url,
+      url,
       active: false,
       ...newTabData
     },res);
-  });
-  return await waitForTabLoadThenMonitor(tab.id, sender.tab, options).catch(console.error);
+  });;
 }
 
 function novelUpdatesOpenPageWayback(options, sender){  
@@ -97,34 +100,6 @@ function novelUpdatesRemoveFromStore(options) {
     chrome.tabs.remove(options.current.id, res);
   }).then(_ => deleteCurrentNovelTab(options.parent, options.current))
 }
-
-function waitForTabLoadThenMonitor(mTabId, sender, options ={}) {
-  return new Promise(res => {
-    chrome.tabs.onUpdated.addListener(
-      async function updateListener(tabId, changeInfo, tab){
-        if(changeInfo.status === "complete" && mTabId === tabId){
-          if(options.save){
-            await saveCurrentNovelTab(sender, tab, options.wayback);
-          }
-          const data = {
-            parent: sender,
-            tabId,
-            ...options
-          };
-          chrome.tabs.sendMessage(tabId, {
-            requestType: "monitorNovelUpdates",
-            data,
-          });
-          
-          chrome.tabs.onUpdated.removeListener(updateListener);
-          return res(data);
-        }
-      }
-    );
-  })
-}
-
-
 
 function saveCurrentNovelTab(parent, current, wayback) {
   return new Promise(res => {
