@@ -36,6 +36,15 @@ function openNextPage(){
 }
 
 function monitorNovelUpdates(options) {
+  for(const el of document.querySelectorAll('a')) {
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      chrome.runtime.sendMessage({
+        requestType: "replaceMonitorNovelUpdatesUrl",
+        data: {...options, url: this.href}
+      });
+    })
+  }
   window.addEventListener("keyup", function(e){
     if(e.ctrlKey){
       if(e.key === "ArrowRight"){
@@ -51,13 +60,6 @@ function monitorNovelUpdates(options) {
       }
     }
   });
-  $('a').on('click', function(e){
-    e.preventDefault();
-    chrome.runtime.sendMessage({
-      requestType: "replaceMonitorNovelUpdatesUrl",
-      data: {...options, url: this.href}
-    });
-  })
 }
 
 function novelUpdatesUINext(options, sendResponse) {

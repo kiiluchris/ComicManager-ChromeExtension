@@ -19,7 +19,8 @@
       ],
       "js": [
         "content_scripts.js"
-      ]
+      ],
+      "run_at": "document_end"
     }
   ],
   "icons": {
