@@ -1,30 +1,32 @@
 (function () {
   if(/novelupdates\.com\/series\/[a-zA-Z0-9\-]+\//.test(window.location.href)){
-    checkBoxMonitor();
-  }
+  checkBoxMonitor();
+}
 }());
 
 function checkBoxMonitor(){
   const checkboxes = document.querySelectorAll("table#myTable td input");
   const elements = [...document.querySelectorAll("table#myTable td a.chp-release")];
   for (let i = 0; i < elements.length; i++) {
-     elements[i].addEventListener("click", function(e){
-       const wayback =  e.shiftKey;
-       e.preventDefault();
-       chrome.runtime.sendMessage({
-         data: {
-           url: e.target.href,
-           save: !e.ctrlKey,
-           wayback
-         },
-         requestType: wayback ? "novelUpdatesOpenPageWayback" : "novelUpdatesOpenPage"
-       });
-       checkboxes[i].click();
-       const $unclickedLinks = $('table#myTable tbody tr[style].newcolorme a.chp-release');
-       if($unclickedLinks.length === 0){
-         openNextPage();
-       }
-     });
+    elements[i].addEventListener("click", function(e){
+      const wayback =  e.shiftKey;
+      e.preventDefault();
+      checkboxes[i].click();
+      chrome.runtime.sendMessage({
+        data: {
+          url: e.target.href,
+          save: !e.ctrlKey,
+          wayback
+        },
+        requestType: wayback ? "novelUpdatesOpenPageWayback" : "novelUpdatesOpenPage"
+      });
+      const $unclickedLinks = $('table#myTable tbody tr[style].newcolorme a.chp-release');
+      if(!document.querySelector('.sttitle a')){
+        window.location.reload();
+      } else if($unclickedLinks.length === 0){
+        openNextPage();
+      }
+    });
   }
 }
 
@@ -32,7 +34,7 @@ function openNextPage(){
   const $currentPage = $("div.digg_pagination em.current:not(:first-child)");
   if($currentPage.length !== 0){
     $currentPage.prev()[0].click();
-   }
+  }
 }
 
 function monitorNovelUpdates(options) {
@@ -74,19 +76,19 @@ function novelUpdatesUINext(options, sendResponse) {
       cancelable: true
     }));
   }
-
+  
   sendResponse();
 }
 
 chrome.runtime.onMessage.addListener(
-    function(request,sender,sendResponse){
-        switch(request.requestType){
-            case "monitorNovelUpdates":
-                monitorNovelUpdates(request.data);
-                break;
-            case "novelUpdatesUINext":
-              novelUpdatesUINext(request.data, sendResponse);
-              return true;
-        }
+  function(request,sender,sendResponse){
+    switch(request.requestType){
+      case "monitorNovelUpdates":
+      monitorNovelUpdates(request.data);
+      break;
+      case "novelUpdatesUINext":
+      novelUpdatesUINext(request.data, sendResponse);
+      return true;
     }
+  }
 );
