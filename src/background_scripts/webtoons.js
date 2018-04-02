@@ -22,30 +22,31 @@ function saveTitleOrder({order, offset} = {}) {
   });
 }
 
-function openWebtoonsReading({urls, numOfChapters}) {
-  chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT },function(tabs) {
-    var tabUrls = tabs.map(function(t) {
-      return t.url;
+async function openWebtoonsReading({urls, numOfChapters}) {
+  return await new Promise(resolve => {
+    chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT },function(tabs) {
+      const tabUrls = tabs.map(t => t.url);
+      const pages = urls.filter(u => !tabUrls.includes(u))
+        .slice(0, numOfChapters);
+      openPages(pages);
+      resolve();
     });
-    urls = urls.filter(function(u) {
-      return tabUrls.indexOf(u) === -1;
-    }).slice(0, numOfChapters);
-    openPages(urls);
-  });
+  })
 }
 
-function openWebtoonsDraggable({todayComics, offset}) {
+async function openWebtoonsDraggable({todayComics, offset}) {
   saveTitleOrder({order:todayComics, offset});
-  var tabIds = [];
+  const tabIds = [];
   for (var i = 0; i < todayComics.length; i++) {
-    chrome.tabs.create({
-      active: false,
-      url: todayComics[i].link
-    }, function openFirstComic(tab) {
-      tabIds.push({
-        tab: tab.id,
-        val: 0
-      });
+    const tab = await new Promise(res => {
+      chrome.tabs.create({
+        active: false,
+        url: todayComics[i].link
+      }, res);
+    })
+    tabIds.push({
+      tab: tab.id,
+      val: 0
     });
   }
   monitorWebtoonTabs(tabIds);
@@ -77,13 +78,17 @@ function monitorWebtoonTabs(tabIds) {
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
+    let res;
     switch (request.requestType) {
       case "openWebtoonsReading":
-      openWebtoonsReading(request.data);
+      res = openWebtoonsReading(request.data);
       break;
       case "hasWebtoonDraggable":
-      openWebtoonsDraggable(request.data);
+      res = openWebtoonsDraggable(request.data);
       break;
     }
+    res.then(sendResponse);
+
+    return true;
   }
 );
