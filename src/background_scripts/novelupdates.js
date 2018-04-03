@@ -55,6 +55,7 @@ function getTabIndex(selectFunc, clampFunc){
 
 const getMaxTabIndex = getTabIndex(Math.max, x => x);
 const getMinTabIndex = getTabIndex(Math.min, Math.max.bind(null, 0));
+const novelUrlMatch = (ch, tab) => new RegExp(ch + '\/?$').test(tab);
 
 async function novelUpdatesOpenParent({page}, sender){
   const index = await getMinTabIndex({
@@ -160,7 +161,7 @@ function deleteCurrentNovelTab(parent, current) {
       let novels = data.novels || {};
       let key = parent.url.match(/.*\//)[0] + "*";
       if(novels[key]){
-        novels[key] = novels[key].filter(n => n.url !== current.url);
+        novels[key] = novels[key].filter(n => !novelUrlMatch(n.url, current.url));
         if(novels[key].length === 0){
           delete novels[key];
         }
@@ -218,7 +219,7 @@ chrome.tabs.onUpdated.addListener(
         chrome.tabs.query({url: 'https://www.novelupdates.com/series/*'}, async function(tabs){
           if(tabs.length !== 0){
             for(const key in cleanedNovels){
-              const novel = cleanedNovels[key].find(ch => ch.url === tab.url);
+              const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url));
               if(novel){
                 const parent = tabs.find(t => new RegExp(key.replace('*', '.*')).test(t.url));
                 return parent && chrome.tabs.sendMessage(tab.id, {
@@ -241,24 +242,25 @@ chrome.tabs.onUpdated.addListener(
 chrome.runtime.onInstalled.addListener(
   function(details){
     chrome.tabs.query({url:'https://www.novelupdates.com/series/*'}, function(tabs){
-    for (let i = 0; i < tabs.length; i++) {
-      chrome.tabs.reload(tabs[i].id)
-    }
-  });
+      for (let i = 0; i < tabs.length; i++) {
+        chrome.tabs.reload(tabs[i].id)
+      }
+    });
+
   
-  chrome.storage.local.get("novels", function (data) {
-    let novels = data.novels;
-    for (let key in novels) {
+  chrome.storage.local.get("novels", async function ({novels}) {
+    const tabs =  await new Promise(res => {
+      chrome.tabs.query({}, res);
+    });
+
+    for (const key in novels) {
       if (novels.hasOwnProperty(key)) {
-        for (let i = 0; i < novels[key].length; i++) {
-          let novel = novels[key][i];
-          chrome.tabs.query({ url: novel.url}, function (tabs) {
-            if(tabs.length)
-              chrome.tabs.reload(tabs[0].id)
-          });
+        for(const tab of tabs){
+          if(novels[key].find(({url}) => novelUrlMatch(url, tab.url))){
+            chrome.tabs.reload(tab.id);
+          }
         }
       }
     }
   });
-}
-)
+})
