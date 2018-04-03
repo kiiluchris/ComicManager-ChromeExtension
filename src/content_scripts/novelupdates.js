@@ -59,6 +59,11 @@ function monitorNovelUpdates(options) {
           requestType: "novelUpdatesRemoveFromStore",
           data: options
         });
+      } else if (e.key === "ArrowUp") {
+        chrome.runtime.sendMessage({
+          requestType: "novelUpdatesOpenParent",
+          data: options
+        });
       }
     }
   });

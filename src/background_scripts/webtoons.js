@@ -81,11 +81,13 @@ chrome.runtime.onMessage.addListener(
     let res;
     switch (request.requestType) {
       case "openWebtoonsReading":
-      res = openWebtoonsReading(request.data);
-      break;
+        res = openWebtoonsReading(request.data);
+        break;
       case "hasWebtoonDraggable":
-      res = openWebtoonsDraggable(request.data);
-      break;
+        res = openWebtoonsDraggable(request.data);
+        break;
+      default:
+        return;
     }
     res.then(sendResponse);
 

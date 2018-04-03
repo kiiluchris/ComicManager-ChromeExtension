@@ -19,6 +19,9 @@ chrome.runtime.onMessage.addListener(
       case "replaceMonitorNovelUpdatesUrl":
         res = replaceMonitorNovelUpdatesUrl({...request.data, current: sender.tab});
         break;
+      case "novelUpdatesOpenParent":
+        res = novelUpdatesOpenParent(request.data, sender);
+        break;
       default:
         return;
     }
@@ -26,6 +29,46 @@ chrome.runtime.onMessage.addListener(
     return true;
   }
 );
+
+function getTabIndex(selectFunc, clampFunc){
+  return async (tab, offset = 1) => { 
+    let index;
+    const novels = await getNovels();
+    const parentURL = tab.url.match(/.*\//)[0] + "*";
+    if(novels.hasOwnProperty(parentURL)){
+      index =  tab.index + offset;
+      const tabs = await new Promise(res => {
+        chrome.tabs.query({}, res)
+      });
+      const urls = novels[parentURL].map(({url}) => url);
+      for(const tab of tabs){
+        if(urls.includes(tab.url)){
+          index = selectFunc(index, tab.index + offset);
+        }
+      }
+      index = clampFunc(index);
+    }
+  
+    return index;
+  }
+}
+
+const getMaxTabIndex = getTabIndex(Math.max, x => x);
+const getMinTabIndex = getTabIndex(Math.min, Math.max.bind(null, 0));
+
+async function novelUpdatesOpenParent({page}, sender){
+  const index = await getMinTabIndex({
+    url: page,
+    index: 1000
+  }, 0);
+  return await new Promise(resolve => {
+    chrome.tabs.create({
+      url: page,
+      active: false,
+      index
+    }, resolve);
+  });
+}
 
 async function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
   await deleteCurrentNovelTab(parent, current);
@@ -39,21 +82,7 @@ async function novelUpdatesOpenPage(options, sender) {
   const newTabData = {};
   const {url} = await fetch(options.url, {method: 'HEAD'});
   if(options.save){
-    const novels = await getNovels();
-    const parentURL = sender.tab.url.match(/.*\//)[0] + "*";
-    if(novels.hasOwnProperty(parentURL)){
-      newTabData.index =  sender.tab.index + 1;
-      const tabs = await new Promise(res => {
-        chrome.tabs.query({}, res)
-      });
-      const urls = novels[parentURL].map(({url}) => url);
-      for(const tab of tabs){
-        if(urls.includes(tab.url)){
-          newTabData.index = Math.max(newTabData.index, tab.index + 1);
-        }
-      }
-    }
-    
+    newTabData.index = await getMaxTabIndex(sender.tab);    
     await saveCurrentNovelTab(sender.tab, {url}, options.wayback);
   }
 
