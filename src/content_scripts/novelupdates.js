@@ -1,7 +1,7 @@
 (function () {
   if(/novelupdates\.com\/series\/[a-zA-Z0-9\-]+\//.test(window.location.href)){
-  checkBoxMonitor();
-}
+    checkBoxMonitor();
+  }
 }());
 
 function checkBoxMonitor(){
@@ -37,7 +37,7 @@ function openNextPage(){
   }
 }
 
-function monitorNovelUpdates(options) {
+function monitorNovelUpdates(options, extensionName) {
   for(const el of document.querySelectorAll('a')) {
     el.addEventListener('click', function(e){
       e.preventDefault();
@@ -67,11 +67,14 @@ function monitorNovelUpdates(options) {
       }
     }
   });
+  window.postMessage({
+    type: extensionName,
+    status: "complete" 
+  }, window.location.href);
 }
 
 function novelUpdatesUINext(options, sendResponse) {
-  let $nextChapterLink = $('table#myTable tbody tr[style].newcolorme a.chp-release').last();
-  
+  const $nextChapterLink = $('table#myTable tbody tr[style].newcolorme a.chp-release').last();
   if($nextChapterLink.length === 0) {
     openNextPage();
   } else {
@@ -89,7 +92,7 @@ chrome.runtime.onMessage.addListener(
   function(request,sender,sendResponse){
     switch(request.requestType){
       case "monitorNovelUpdates":
-      monitorNovelUpdates(request.data);
+      monitorNovelUpdates(request.data, request.extensionName);
       break;
       case "novelUpdatesUINext":
       novelUpdatesUINext(request.data, sendResponse);

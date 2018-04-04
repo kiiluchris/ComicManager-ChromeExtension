@@ -207,34 +207,49 @@ function cleanNovels(novels = {}, data = {}){
 }
 
 chrome.tabs.onUpdated.addListener(
-  function check(tabId, changeInfo, tab) {
+  function check(tabId, {status}, tab) {
     return async function(){
-      if(changeInfo.status === "complete"){
+      if(status){
         const novels = await getNovels();
         if(Object.keys(novels).length === 0){
           return;
         }
         const cleanedNovels = cleanNovels(novels);
         chrome.storage.local.set({novels: cleanedNovels});
-        chrome.tabs.query({url: 'https://www.novelupdates.com/series/*'}, async function(tabs){
-          if(tabs.length !== 0){
-            for(const key in cleanedNovels){
-              const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url));
-              if(novel){
-                const parent = tabs.find(t => new RegExp(key.replace('*', '.*')).test(t.url));
-                return parent && chrome.tabs.sendMessage(tab.id, {
-                  requestType: "monitorNovelUpdates",
-                  data: {
-                    parent,
-                    tabId: tab.id,
-                    ...novel
-                  }
-                });
+        const tabs = await new Promise(res => {
+          chrome.tabs.query({url: 'https://www.novelupdates.com/series/*'}, res);
+        });
+        if(tabs.length !== 0){
+          for(const key in cleanedNovels){
+            const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url));
+            if(novel){
+              const parent = tabs.find(t => new RegExp(key.replace('*', '.*')).test(t.url));
+              if(parent){
+                const {name} = chrome.runtime.getManifest();
+                if(status === "complete"){
+                  chrome.tabs.sendMessage(tab.id, {
+                    requestType: "monitorNovelUpdates",
+                    data: {
+                      parent,
+                      tabId: tab.id,
+                      ...novel
+                    },
+                    extensionName: name
+                  });
+                } else if(status === "loading") {
+                  chrome.tabs.executeScript(tab.id, {
+                    code: `window.postMessage({
+                      type: "${name}",
+                      status: "loading" 
+                    }, window.location.href);`
+                  });
+                }
+                return;
               }
             }
           }
-        });
-      }
+        }
+      } 
     }().catch(console.error);
   }
 );
