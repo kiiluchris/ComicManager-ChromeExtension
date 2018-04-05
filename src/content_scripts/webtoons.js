@@ -126,9 +126,10 @@ function openNextChapters({numOfChapters}) {
 
 function scrollWebtoon() {
   $('.viewer_lst .viewer_img img')
-  .each(function() {
-    this.src = $(this).data('url');
-  });
+    .each(function() {
+      this.src = $(this).data('url');
+    });
+  window.scroll(0, 0);
 }
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
