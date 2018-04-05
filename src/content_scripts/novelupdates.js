@@ -22,7 +22,7 @@ function checkBoxMonitor(){
       });
       const $unclickedLinks = $('table#myTable tbody tr[style].newcolorme a.chp-release');
       if(!document.querySelector('.sttitle a')){
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1000);
       } else if($unclickedLinks.length === 0){
         openNextPage();
       }
