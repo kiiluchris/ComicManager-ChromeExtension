@@ -65,6 +65,7 @@ async function novelUpdatesOpenParent({page}, sender){
   return await new Promise(resolve => {
     chrome.tabs.create({
       url: page,
+      windowId: sender.tab.windowId,
       active: false,
       index
     }, resolve);
@@ -92,6 +93,7 @@ async function novelUpdatesOpenPage(options, sender) {
     chrome.tabs.create({
       url,
       active: false,
+      windowId: sender.tab.windowId,
       ...newTabData
     },res);
   });;
