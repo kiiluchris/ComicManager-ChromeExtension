@@ -11,20 +11,20 @@ const config = {
   entry: {
     content_scripts: [
       "babel-polyfill",
-      path.join(__dirname, 'content_scripts'),
+      path.join(__dirname, 'src', 'content_scripts'),
     ],
     background_scripts: [
       "babel-polyfill",
-      path.join(__dirname, 'background_scripts'),
+      path.join(__dirname, 'src', 'background_scripts'),
     ],
     options: [
       "babel-polyfill",
-      path.join(__dirname, 'options.js'),
+      path.join(__dirname, 'src', 'options.js'),
     ],
   },
   devtool: 'source-map',
   output: {
-    path: path.join(__dirname, "../dist"),
+    path: path.join(__dirname, "dist"),
     filename: '[name].js',
     publicPath: '/'
   },
