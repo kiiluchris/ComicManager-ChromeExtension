@@ -1,7 +1,7 @@
 'use strict';
 import {kissmangaMatchChapter} from '../shared';
 
-function openURLsOnDay({id,offset, onlyTab}, sendResponse){
+function openURLsOnDay({id,offset, onlyTab,numOfChapters}, sendResponse){
   var d = new Date();
   d.setDate(d.getDate()-offset);
   var t = (d) => `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
@@ -13,13 +13,16 @@ function openURLsOnDay({id,offset, onlyTab}, sendResponse){
       urls.unshift(columns[i].previousElementSibling.firstElementChild.href);
     }
   }
-  if(urls.length){
-    if(!onlyTab && urls.length > 5){
-      return sendResponse(true);
-    }
+  const data = {
+    len: urls.length,
+    comicsAreExcess: false
+  };
+  if(!onlyTab && urls.length > 5 || numOfChapters >= 10){
+    data.comicsAreExcess = true;
+  } else {
     chrome.runtime.sendMessage({ requestType: "openPages", pages: urls, tabId: id });
-    sendResponse(false);
   }
+  sendResponse(data);
 }
 
 function openNextChaptersKissmanga({current, index, offset = 5, willClose = false}){
