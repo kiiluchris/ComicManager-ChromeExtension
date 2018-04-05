@@ -72,10 +72,11 @@ async function novelUpdatesOpenParent({page}, sender){
 }
 
 async function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
+  const {url:u} = await fetch(url, {method: 'HEAD'});
   await deleteCurrentNovelTab(parent, current);
-  await saveCurrentNovelTab(parent, {url}, wayback);
+  await saveCurrentNovelTab(parent, {url:u}, wayback);
   return await new Promise(res => {
-    chrome.tabs.update(current.id, {url}, res);
+    chrome.tabs.update(current.id, {url:u}, res);
   })
 }
 
