@@ -1,5 +1,5 @@
 'use strict';
-import {kissmangaMatchChapter} from '../shared';
+import {kissmangaMatchChapter, kissmangaNextChapterFilterElements, kissmangaChapterDifference} from '../shared';
 
 function openURLsOnDay({id,offset, onlyTab,numOfChapters}, sendResponse){
   var d = new Date();
@@ -17,7 +17,7 @@ function openURLsOnDay({id,offset, onlyTab,numOfChapters}, sendResponse){
     len: urls.length,
     comicsAreExcess: false
   };
-  if(!onlyTab && urls.length > 5 || numOfChapters >= 10){
+  if(!urls.length || (!onlyTab && urls.length > 5) || numOfChapters >= 10){
     data.comicsAreExcess = true;
   } else {
     chrome.runtime.sendMessage({ requestType: "openPages", pages: urls, tabId: id });
@@ -25,20 +25,16 @@ function openURLsOnDay({id,offset, onlyTab,numOfChapters}, sendResponse){
   sendResponse(data);
 }
 
-function openNextChaptersKissmanga({current, index, offset = 5, willClose = false}){
+function openNextChaptersKissmanga({current, index, offset = 5, willClose = false, volume = null}){
   const url = window.location.href;
   const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
   const last = current + offset;
   const $select = $('select.selectChapter').first();
-  const $chapters = $('option', $select);  
-  const nextChapters = $chapters.filter((i, el) => {
-      const chapterFloat = kissmangaMatchChapter(el);
-      if(chapterFloat === null) return false;
-      
-      return  chapterFloat > current && chapterFloat <= last + 0.1;
-    })
+  const $chapters = $('option', $select); 
+  const chapterFilter = kissmangaNextChapterFilterElements(current, last, volume);
+  const nextChapters = $chapters.filter(chapterFilter)
     .get()
-    .sort((a, b) => kissmangaMatchChapter(a) - kissmangaMatchChapter(b))
+    .sort(kissmangaChapterDifference)
     .slice(0, offset)
     .map(el => parentURL + el.value);
 
@@ -58,12 +54,13 @@ function openNextChaptersKissmanga({current, index, offset = 5, willClose = fals
       if(e.ctrlKey && e.key == 'ArrowRight'){
         chrome.runtime.sendMessage({
           requestType: 'getLastChapterKissmanga',
-        }, ({last, index}) => {
+        }, ({last, index, volume}) => {
           openNextChaptersKissmanga({
             offset: 1,
             willClose: true,
             current: last,
-            index
+            index,
+            volume
           });
         })
       }

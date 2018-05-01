@@ -24,7 +24,7 @@ function getNextChapterDetailsKissmanga(tab){
   return new Promise(res => {
     const {url, title, id} = tab;
     const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
-    let greatestChapter = kissmangaMatchChapter(title);
+    let {chapter:greatestChapter, volume: greatestVolume} = kissmangaMatchChapter(title);
     if(greatestChapter === null){
       return alert('Chapter could not be parsed from the title');
     }
@@ -33,22 +33,25 @@ function getNextChapterDetailsKissmanga(tab){
       for(let i = 0; i < tabs.length; i++){
         const t = tabs[i];
         if(t.url + '/' !== parentURL){
-          const chapterFloat = kissmangaMatchChapter(t.title);
-          if(chapterFloat !== null && chapterFloat >  greatestChapter){
+          const {chapter: chapterFloat, volume} = kissmangaMatchChapter(t.title);
+          if((
+            volume && greatestVolume && volume > greatestVolume
+          ) || chapterFloat && chapterFloat >  greatestChapter){
             greatestChapter = chapterFloat;
             greatestTabIndex = t.index;
+            greatestVolume = volume;
           }
         }
       }
 
-      res({greatestChapter, greatestTabIndex, parentURL});
+      res({greatestChapter, greatestTabIndex, parentURL, volume: greatestVolume});
     });
   }).catch(console.error);
 }
 
 export function openNextChaptersKissmanga(tab, {offset = 5}){
   return getNextChapterDetailsKissmanga(tab)
-    .then(({greatestChapter, greatestTabIndex, parentURL}) => {      
+    .then(({greatestChapter, greatestTabIndex, parentURL, volume}) => {      
       chrome.tabs.sendMessage(tab.id, {
         requestType: "openNextChaptersKissmanga",
         data: {
@@ -56,6 +59,7 @@ export function openNextChaptersKissmanga(tab, {offset = 5}){
           index: greatestTabIndex,
           parentURL,
           offset,
+          volume
         }
       });
     });
@@ -63,10 +67,11 @@ export function openNextChaptersKissmanga(tab, {offset = 5}){
 
 function getLastChapterKissmanga(tab, sendResponse){
   return getNextChapterDetailsKissmanga(tab)
-    .then(({greatestChapter, greatestTabIndex}) => {
+    .then(({greatestChapter, greatestTabIndex, volume}) => {
       sendResponse({
         last: greatestChapter,
         index: greatestTabIndex,
+        volume
       });
     });
 }
