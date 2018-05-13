@@ -4,14 +4,20 @@ import {createTab, kissmangaMatchChapter, kissmangaChapterDifference} from '../s
 
 export function openKissmangaChapter(offset = 0) {
   chrome.tabs.query({
-      'windowId': chrome.windows.WINDOW_ID_CURRENT
+      windowId: chrome.windows.WINDOW_ID_CURRENT,
+      url: '*://kissmanga.com/Manga/*'
   }, async function(tabs) {
-      tabs = tabs.filter((t) => t.url && /.*kissmanga.com\/Manga\/[^\/]+$/.test(t.url));
+      const filteredTabs = tabs.filter((t) => 
+        t.url && /.*kissmanga.com\/Manga\/[^\/]+$/.test(t.url)
+      );
       let numOfChapters = 0;
-      for (let i = 0; i < tabs.length; i++) {
-        let {id} = tabs[i];
+      for (let i = 0; i < filteredTabs.length; i++) {
+        let {id} = filteredTabs[i];
         let {comicsAreExcess, len} = await new Promise((res) => {
-          chrome.tabs.sendMessage(id, {requestType: "kissmangaOpenDay", data: {offset,id,onlyTab:(tabs.length == 1), numOfChapters}}, res);
+          chrome.tabs.sendMessage(id, {
+            requestType: "kissmangaOpenDay", 
+            data: {offset,id,onlyTab:(filteredTabs.length == 1), numOfChapters}
+          }, res);
         });
         numOfChapters += len;
         if(comicsAreExcess)
