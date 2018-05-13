@@ -1,6 +1,6 @@
 'use strict';
 
-import {createTab, kissmangaMatchChapter} from '../shared';
+import {createTab, kissmangaMatchChapter, kissmangaChapterDifference} from '../shared';
 
 export function openKissmangaChapter(offset = 0) {
   chrome.tabs.query({
@@ -21,30 +21,21 @@ export function openKissmangaChapter(offset = 0) {
 }
 
 function getNextChapterDetailsKissmanga(tab){
-  return new Promise(res => {
-    const {url, title, id} = tab;
+  return new Promise((res, rej) => {
+    const {url, title} = tab;
     const parentURL = url.slice(0, url.lastIndexOf('/') + 1);
-    let {chapter:greatestChapter, volume: greatestVolume} = kissmangaMatchChapter(title);
-    if(greatestChapter === null){
-      return alert('Chapter could not be parsed from the title');
-    }
-    let greatestTabIndex = tab.index;
-    chrome.tabs.query({url: parentURL + '*'}, tabs => {
-      for(let i = 0; i < tabs.length; i++){
-        const t = tabs[i];
-        if(t.url + '/' !== parentURL){
-          const {chapter: chapterFloat, volume} = kissmangaMatchChapter(t.title);
-          if((
-            volume && greatestVolume && volume > greatestVolume
-          ) || chapterFloat && chapterFloat >  greatestChapter){
-            greatestChapter = chapterFloat;
-            greatestTabIndex = t.index;
-            greatestVolume = volume;
-          }
-        }
-      }
-
-      res({greatestChapter, greatestTabIndex, parentURL, volume: greatestVolume});
+    chrome.tabs.query({url: parentURL + '**'}, tabs => {
+      const greatestTab = tabs
+        .reduce((a, b) => 
+          kissmangaChapterDifference(a,b) > 0 ? a : b
+        );
+      const {chapter, volume} = kissmangaMatchChapter(greatestTab);
+      res({
+        greatestChapter: chapter, 
+        greatestTabIndex: greatestTab.index, 
+        volume,
+        parentURL, 
+      });
     });
   }).catch(console.error);
 }
@@ -76,7 +67,7 @@ function getLastChapterKissmanga(tab, sendResponse){
     });
 }
 
-async function kissmangaOpenPages(tab, {urls, current, willClose, index}){
+async function kissmangaOpenPages(tab, {urls, willClose, index}){
   for (let i = 0; i < urls.length; i++) {
     await createTab({
       url: urls[i],

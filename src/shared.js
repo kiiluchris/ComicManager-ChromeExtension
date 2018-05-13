@@ -38,7 +38,10 @@ export function monitorTabs(tabIds = [], cb) {
  * @returns {(number|null)}
  */
 export function kissmangaMatchChapter(el){
-  let text = el.innerHTML !== undefined ? el.innerHTML : el;
+  const text = el.title || el.innerHTML || el;
+  if(!text) {
+    throw new Error("Invalid match type given");
+  }
   const volumeMatch = /vol\.?\s*(\d+)/i.exec(text);
   let chapter = /(?:ch|chapter|episode|ep)\.?\s*([\d\.]+)/i.exec(text);
   if(chapter === null){
@@ -57,6 +60,9 @@ export function kissmangaMatchChapter(el){
 export function kissmangaChapterDifference(el1,el2){
   const a = kissmangaMatchChapter(el1);
   const b = kissmangaMatchChapter(el2);
+  if(!a.chapter || !b.chapter){
+    return 0;
+  }
   let diff = a.chapter - b.chapter;
   if(a.volume && b.volume){
 	  diff += (a.volume - b.volume) * 10000;
@@ -65,13 +71,13 @@ export function kissmangaChapterDifference(el1,el2){
   return diff;
 }
 
-export function kissmangaNextChapterFilterElements(current, last, currentVolume){
+export function kissmangaNextChapterFilterElements(currentChapter, currentVolume){
   return (i, el) => {
     const {chapter, volume} = kissmangaMatchChapter(el);
     if(!chapter) return false;
-    if(volume && currentVolume && volume > currentVolume) return true;
+    if(volume && currentVolume && !(volume === currentVolume)) return volume > currentVolume;
     
-    return chapter > current && chapter <= last + 0.1;
+    return chapter > currentChapter;
   }
 }
 

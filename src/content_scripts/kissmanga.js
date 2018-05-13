@@ -31,18 +31,19 @@ function openNextChaptersKissmanga({current, index, offset = 5, willClose = fals
   const last = current + offset;
   const $select = $('select.selectChapter').first();
   const $chapters = $('option', $select); 
-  const chapterFilter = kissmangaNextChapterFilterElements(current, last, volume);
-  const nextChapters = $chapters.filter(chapterFilter)
-    .get()
-    .sort(kissmangaChapterDifference)
-    .slice(0, offset)
-    .map(el => parentURL + el.value);
+  const chapterFilter = kissmangaNextChapterFilterElements(current, volume);
+  const nextChapters = !current
+    ? []
+    : $chapters.filter(chapterFilter)
+      .get()
+      .sort(kissmangaChapterDifference)
+      .slice(0, offset)
+      .map(el => parentURL + el.value);
 
   chrome.runtime.sendMessage({
     requestType: "kissmangaOpenPages",
     data: {
       urls: nextChapters,
-      current: last,
       willClose,
       index,
     }
