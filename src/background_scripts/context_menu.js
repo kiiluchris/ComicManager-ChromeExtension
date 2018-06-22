@@ -43,7 +43,7 @@ const callbacks = {
   }
 }
 const webtoonFavPattern = [
-  "*://*.webtoons.com/favorite"
+  "*://*.webtoons.com/en/favorite"
 ];
 const kissmangaAllPattern = [
   "*://kissmanga.com/*"
