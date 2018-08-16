@@ -32,11 +32,10 @@ chrome.runtime.onMessage.addListener(
 
 function getTabIndex(selectFunc, clampFunc){
   return async (tab, offset = 1) => { 
-    let index;
+    let index =  tab.index + offset;
     const novels = await getNovels();
     const parentURL = tab.url.match(/.*\//)[0] + "*";
     if(novels.hasOwnProperty(parentURL)){
-      index =  tab.index + offset;
       const tabs = await new Promise(res => {
         chrome.tabs.query({}, res)
       });
@@ -55,7 +54,7 @@ function getTabIndex(selectFunc, clampFunc){
 
 const getMaxTabIndex = getTabIndex(Math.max, x => x);
 const getMinTabIndex = getTabIndex(Math.min, Math.max.bind(null, 0));
-const novelUrlMatch = (ch, tab) => new RegExp(ch + '\/?$').test(tab);
+const novelUrlMatch = (ch, tab) => new RegExp(ch.replace(/\?/g, "\\?") + '/?$').test(tab);
 
 async function novelUpdatesOpenParent({page}, sender){
   const index = await getMinTabIndex({
@@ -222,34 +221,30 @@ chrome.tabs.onUpdated.addListener(
         const tabs = await new Promise(res => {
           chrome.tabs.query({url: 'https://www.novelupdates.com/series/*'}, res);
         });
-        if(tabs.length !== 0){
-          for(const key in cleanedNovels){
-            const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url));
-            if(novel){
-              const parent = tabs.find(t => new RegExp(key.replace('*', '.*')).test(t.url));
-              if(parent){
-                const {name} = chrome.runtime.getManifest();
-                if(status === "complete"){
-                  chrome.tabs.sendMessage(tab.id, {
-                    requestType: "monitorNovelUpdates",
-                    data: {
-                      parent,
-                      tabId: tab.id,
-                      ...novel
-                    },
-                    extensionName: name
-                  });
-                } else if(status === "loading") {
-                  chrome.tabs.executeScript(tab.id, {
-                    code: `window.postMessage({
-                      type: "${name}",
-                      status: "loading" 
-                    }, window.location.href);`
-                  });
-                }
-                return;
-              }
+        for(const key in cleanedNovels){
+          const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url));
+          if(novel){
+            const parent = tabs.find(t => new RegExp(key.replace('*', '.*')).test(t.url));
+            const {name} = chrome.runtime.getManifest();
+            if(status === "complete"){
+              chrome.tabs.sendMessage(tab.id, {
+                requestType: "monitorNovelUpdates",
+                data: {
+                  parent: parent || {url: novel.page},
+                  tabId: tab.id,
+                  ...novel
+                },
+                extensionName: name
+              });
+            } else if(status === "loading") {
+              chrome.tabs.executeScript(tab.id, {
+                code: `window.postMessage({
+                  type: "${name}",
+                  status: "loading" 
+                }, window.location.href);`
+              });
             }
+            return;
           }
         }
       } 

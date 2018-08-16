@@ -51,7 +51,7 @@ function monitorNovelUpdates(options, extensionName) {
     if(e.ctrlKey){
       if(e.key === "ArrowRight"){
         chrome.runtime.sendMessage({
-          requestType: "novelUpdatesBGNext",
+          requestType: options.parent.id ? "novelUpdatesBGNext" : "novelUpdatesRemoveFromStore",
           data: options
         });
       } else if (e.key === "ArrowLeft") {
