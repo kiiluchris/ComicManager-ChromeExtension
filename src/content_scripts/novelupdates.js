@@ -33,19 +33,24 @@ function checkBoxMonitor(){
 function openNextPage(){
   const $currentPage = $("div.digg_pagination em.current:not(:first-child)");
   if($currentPage.length !== 0){
-    $currentPage.prev()[0].click();
+    setTimeout(() => {
+      $currentPage.prev()[0].click();
+    }, 2500)
   }
 }
 
 function monitorNovelUpdates(options, extensionName) {
+  const pageURL = window.location.href.replace(/#.*/, '');
   for(const el of document.querySelectorAll('a')) {
-    el.addEventListener('click', function(e){
-      e.preventDefault();
-      chrome.runtime.sendMessage({
-        requestType: "replaceMonitorNovelUpdatesUrl",
-        data: {...options, url: this.href}
-      });
-    })
+    if(el.href.replace(/#.*/, '') !== pageURL){
+      el.addEventListener('click', function(e){
+        e.preventDefault();
+        chrome.runtime.sendMessage({
+          requestType: "replaceMonitorNovelUpdatesUrl",
+          data: {...options, url: this.href}
+        });
+      })
+    }
   }
   window.addEventListener("keyup", function(e){
     if(e.ctrlKey){
@@ -68,9 +73,34 @@ function monitorNovelUpdates(options, extensionName) {
     }
   });
   window.postMessage({
-    type: extensionName,
+    extension: extensionName,
     status: "complete" 
   }, window.location.href);
+  window.addEventListener("message", ({data:{extension, url, message}}) => {
+    const messageHandlerArgs = ({
+      novelUpdatesSaveUrl: [{
+        data: {
+          url,
+          save: true,
+          wayback: options.wayback,
+          parent: options.parent
+        },
+        requestType: "novelUpdatesOpenPageNext"
+      }, () => {
+        window.postMessage({
+          extensionName,
+          message: `Saved: ${url}`
+        }, window.location.href);
+      }],
+      replaceMonitorNovelUpdatesUrl: [{
+        requestType: "replaceMonitorNovelUpdatesUrl",
+        data: {...options, url }
+      }]
+    })[message]
+    if(extension === extensionName && messageHandlerArgs){
+      chrome.runtime.sendMessage(...messageHandlerArgs);
+    }
+  });
 }
 
 function novelUpdatesUINext(options, sendResponse) {

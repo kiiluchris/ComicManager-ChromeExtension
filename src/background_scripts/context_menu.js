@@ -1,6 +1,6 @@
 'use strict';
 import {openKissmangaChapter, openNextChaptersKissmanga} from './kissmanga';
-import {getTitleOrder} from './webtoons';
+import {getTitleOrder, get} from './webtoons';
 
 function defaultCB(tab, info, val){
   chrome.tabs.sendMessage(tab.id, {requestType: info.menuItemId, ...val});
@@ -9,7 +9,7 @@ function defaultCB(tab, info, val){
 async function webtoonPrompt(tab, info, data = {}){
   defaultCB(tab, info, {
     data: {
-      titleOrder: await getTitleOrder({
+      titleOrder: await getTitleOrder(tab.id, {
         offset: data.offset
       }),
       ...data

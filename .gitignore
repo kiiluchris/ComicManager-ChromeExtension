@@ -6,3 +6,5 @@ dist/options.*
 server
 timestamp*
 test.js
+*.swp
+

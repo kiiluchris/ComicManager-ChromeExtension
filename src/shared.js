@@ -86,3 +86,24 @@ export function getWebtoonDate(offset = 0){
     .tz('America/New_york')
     .subtract(offset, 'days');
 }
+
+
+const dateFormat = 'MMM D, YYYY'
+
+function webtoonDate(date){
+  if(typeof date === 'string')
+    return moment(date, dateFormat)
+  else if(date instanceof Date)
+    return moment(new Date().toISOString())
+  else
+    return date
+}
+
+export function webtoonDateWithOffset(date, offset = 0){
+  return webtoonDate(date)
+    .subtract(offset, 'days')
+}
+
+export function webtoonDateFormatted(date, offset = 0){
+  return webtoonDateWithOffset(date, offset).format(dateFormat)
+}

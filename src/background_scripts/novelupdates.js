@@ -10,6 +10,9 @@ chrome.runtime.onMessage.addListener(
       case "novelUpdatesOpenPageWayback":
         res = novelUpdatesOpenPageWayback(request.data, sender);
         break;
+      case "novelUpdatesOpenPageNext":
+        res = novelUpdatesOpenPageNext(request.data, sender);
+        break;
       case "novelUpdatesBGNext":
         res = novelUpdatesBGNext({...request.data, current:sender.tab});
         break;
@@ -21,6 +24,9 @@ chrome.runtime.onMessage.addListener(
         break;
       case "novelUpdatesOpenParent":
         res = novelUpdatesOpenParent(request.data, sender);
+        break;
+      case "novelUpdatesSaveUrl":
+        res = novelUpdatesSaveUrl(request.data, sender);
         break;
       default:
         return;
@@ -56,6 +62,10 @@ const getMaxTabIndex = getTabIndex(Math.max, x => x);
 const getMinTabIndex = getTabIndex(Math.min, Math.max.bind(null, 0));
 const novelUrlMatch = (ch, tab) => new RegExp(ch.replace(/\?/g, "\\?") + '/?$').test(tab);
 
+async function novelUpdatesSaveUrl({url, parent, wayback}, sender){
+  return await saveCurrentNovelTab(parent, {url}, wayback)
+}
+
 async function novelUpdatesOpenParent({page}, sender){
   const index = await getMinTabIndex({
     url: page,
@@ -78,6 +88,16 @@ async function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
   return await new Promise(res => {
     chrome.tabs.update(current.id, {url:u}, res);
   })
+}
+
+async function novelUpdatesOpenPageNext(options, sender){
+  const openFunc = options.wayback ? novelUpdatesOpenPageWayback : novelUpdatesOpenPage;
+  return openFunc(options, {
+    tab: {
+      windowId: sender.tab.windowId,
+      ...options.parent
+    },
+  });
 }
 
 async function novelUpdatesOpenPage(options, sender) {
@@ -198,7 +218,8 @@ function cleanNovels(novels = {}, data = {}){
   if(novelKeys.length === 0) return Object.freeze(data);
   const key = novelKeys[0];
   if(novels.hasOwnProperty(key)){
-    const novelChapters = filterOutWeekOldNovels(novels[key]);
+    const novelChapters = filterOutWeekOldNovels(novels[key])
+      .filter(n => n.url);
     delete novels[key];
     if(novelChapters.length !== 0 ){
       data[key] = novelChapters;
@@ -239,7 +260,7 @@ chrome.tabs.onUpdated.addListener(
             } else if(status === "loading") {
               chrome.tabs.executeScript(tab.id, {
                 code: `window.postMessage({
-                  type: "${name}",
+                  extension: "${name}",
                   status: "loading" 
                 }, window.location.href);`
               });
@@ -266,14 +287,12 @@ chrome.runtime.onInstalled.addListener(
       chrome.tabs.query({}, res);
     });
 
-    for (const key in novels) {
-      if (novels.hasOwnProperty(key)) {
-        for(const tab of tabs){
-          if(novels[key].find(({url}) => novelUrlMatch(url, tab.url))){
-            chrome.tabs.reload(tab.id);
-          }
+    Object.values(novels).forEach(novel => {
+      tabs.forEach(tab => {
+        if(novel.find(({url}) => novelUrlMatch(url, tab.url))){
+          chrome.tabs.reload(tab.id);
         }
-      }
-    }
+      })
+    })
   });
 })

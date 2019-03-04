@@ -1,19 +1,20 @@
 'use strict';
 
 import 'jquery-ui/ui/widgets/sortable';
-import {getWebtoonDate} from '../shared';
+import {webtoonDateFormatted} from '../shared';
 
-function getWebtoonDateByOffset(offset = 0){
-  return getWebtoonDate(offset)
-    .format('MMM D, YYYY');
-}
+
+const currentDate = document
+  .querySelector('ul#_webtoonList span.update')
+  .innerText.split('\n')[1].trim();
+
 
 function setupOverlays({titleOrder, offset = 0}) {
   var list = "ul#_webtoonList";
-  let listItems = "li:has(.txt_ico_up)"; 
-  if(offset > 0){
-    listItems = `li:has(span.update:contains("${getWebtoonDateByOffset(offset)}"))`;
-  }
+  // let listItems = "li:has(.txt_ico_up)"; 
+  // if(offset > 0){
+  const listItems = `li:has(span.update:contains("${webtoonDateFormatted(currentDate, offset)}"))`;
+  // }
   var listOverlays = `${listItems} div.overlay`;
   if ($(listOverlays).length === 0) {
     var overLaySpans = "overlay-spans";
@@ -131,8 +132,10 @@ function scrollWebtoon() {
     });
   window.scroll(0, 0);
 }
+
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
+    let res = null;
     switch (request.requestType) {
       case "startPromptDraggable":
       case "startPromptDraggableYesterday":
@@ -150,6 +153,13 @@ chrome.runtime.onMessage.addListener(
       case "scrollWebtoon":
       scrollWebtoon();
       break;
+      case "getDateWebtoon":
+      res = currentDate;
+      break;
     }
+
+    sendResponse(res)
+
+    return true;
   }
 );

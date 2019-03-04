@@ -1,25 +1,38 @@
 import {openPages} from './index';
-import {getWebtoonDate} from '../shared';
+import {webtoonDateWithOffset} from '../shared';
 
-function getWebtoonDay(offset = 0){
-  return getWebtoonDate(offset).day();
+function getWebtoonDay(date, offset = 0){
+  return webtoonDateWithOffset(date, offset).day();
 }
 
-export function getTitleOrder({offset} = {}) {
+async function getDate(tabId){
+  return new Promise(res => {
+    chrome.tabs.sendMessage(tabId, {
+      requestType: "getDateWebtoon"
+    }, res)
+  })
+}
+
+export async function getTitleOrder(tabId, {offset} = {}) {
+  const date = await getDate(tabId);
   return new Promise((res, rej) => {
     chrome.storage.local.get('webtoonOrder', function(data) {
       let order = data.webtoonOrder;
-      res(order && order[getWebtoonDay(offset)] || []);
+      res(order && order[getWebtoonDay(date, offset)] || []);
     })
   })
 }
 
-function saveTitleOrder({order, offset} = {}) {
-  chrome.storage.local.get('webtoonOrder', function(data) {
-    let oldOrder = data.webtoonOrder || {};
-    oldOrder[getWebtoonDay(offset)] = order;
-    chrome.storage.local.set({ webtoonOrder: oldOrder });
-  });
+async function saveTitleOrder(tabId, {order, offset} = {}) {
+  const date = await getDate(tabId);
+  return new Promise((res) => {
+    chrome.storage.local.get('webtoonOrder', function(data) {
+      let oldOrder = data.webtoonOrder || {};
+      oldOrder[getWebtoonDay(date, offset)] = order;
+      chrome.storage.local.set({ webtoonOrder: oldOrder });
+      res(oldOrder)
+    });
+  })
 }
 
 async function openWebtoonsReading({urls, numOfChapters}) {
@@ -34,8 +47,8 @@ async function openWebtoonsReading({urls, numOfChapters}) {
   })
 }
 
-async function openWebtoonsDraggable({todayComics, offset}, {windowId}) {
-  saveTitleOrder({order:todayComics, offset});
+async function openWebtoonsDraggable({todayComics, offset}, {windowId, id}) {
+  await saveTitleOrder(id, {order:todayComics, offset});
   chrome.tabs.onUpdated.addListener(
     await setupUpdateListener(todayComics, windowId)
   );
