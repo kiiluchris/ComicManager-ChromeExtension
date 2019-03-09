@@ -1,11 +1,12 @@
 import {openPages} from './index';
 import {webtoonDateWithOffset} from '../shared';
+import { webtoons } from '../../typings/webtoons';
 
-function getWebtoonDay(date, offset = 0){
+function getWebtoonDay(date: webtoons.DateF, offset = 0){
   return webtoonDateWithOffset(date, offset).day();
 }
 
-async function getDate(tabId){
+async function getDate(tabId: number) : Promise<string> {
   return new Promise(res => {
     chrome.tabs.sendMessage(tabId, {
       requestType: "getDateWebtoon"
@@ -13,7 +14,7 @@ async function getDate(tabId){
   })
 }
 
-export async function getTitleOrder(tabId, {offset} = {}) {
+export async function getTitleOrder(tabId: number, {offset = 0} = {}) {
   const date = await getDate(tabId);
   return new Promise((res, rej) => {
     chrome.storage.local.get('webtoonOrder', function(data) {
@@ -23,7 +24,10 @@ export async function getTitleOrder(tabId, {offset} = {}) {
   })
 }
 
-async function saveTitleOrder(tabId, {order, offset} = {}) {
+async function saveTitleOrder(tabId: number, {order = [], offset = 0}: {
+  order: webtoons.StorageEntry[];
+  offset: number;
+}) {
   const date = await getDate(tabId);
   return new Promise((res) => {
     chrome.storage.local.get('webtoonOrder', function(data) {
@@ -35,7 +39,10 @@ async function saveTitleOrder(tabId, {order, offset} = {}) {
   })
 }
 
-async function openWebtoonsReading({urls, numOfChapters}) {
+async function openWebtoonsReading({urls, numOfChapters}: {
+  urls: string[],
+  numOfChapters: number
+}) {
   return await new Promise(resolve => {
     chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT },function(tabs) {
       const tabUrls = tabs.map(t => t.url);
@@ -47,23 +54,27 @@ async function openWebtoonsReading({urls, numOfChapters}) {
   })
 }
 
-async function openWebtoonsDraggable({todayComics, offset}, {windowId, id}) {
+async function openWebtoonsDraggable({todayComics, offset}: {
+  todayComics: webtoons.StorageEntryFromClient[],
+  offset: number
+}, {windowId, id}: chrome.tabs.Tab) {
   await saveTitleOrder(id, {order:todayComics, offset});
   chrome.tabs.onUpdated.addListener(
     await setupUpdateListener(todayComics, windowId)
   );
 }
 
-async function setupUpdateListener(webtoonPages = [], windowId = 0) {
+async function setupUpdateListener(webtoonPages: webtoons.StorageEntryFromClient[] = [], windowId = 0) {
   if(!webtoonPages.length || !Array.isArray(webtoonPages)) return;
-  const {id} = await new Promise(res => {
+  const tab: chrome.tabs.Tab = await new Promise(res => {
     chrome.tabs.create({
       active: false,
       url: webtoonPages[0].link,
       windowId
     }, res);
   });
-  const updateListener = async (tabId, {status}, tab) => {
+  const {id} = tab
+  const updateListener = async (tabId: number, {status}: {status: string}, tab: chrome.tabs.Tab) => {
     try {
       if(status !== "loading" || id !== tabId) return;
       if (!webtoonPages[0].hasOpenedChapter) {
@@ -72,8 +83,8 @@ async function setupUpdateListener(webtoonPages = [], windowId = 0) {
       } else {
         chrome.tabs.executeScript(tabId, { 
           code: `;(${(() => {
-            [...document.querySelectorAll('.viewer_lst .viewer_img img')]
-              .forEach(img => {
+            const images: NodeListOf<HTMLImageElement> = document.querySelectorAll('.viewer_lst .viewer_img img');
+            images.forEach(img => {
                 img.src = img.dataset['url'];
               });
             window.scroll(0, 0);
@@ -96,7 +107,7 @@ async function setupUpdateListener(webtoonPages = [], windowId = 0) {
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-    let res;
+    let res: Promise<any>;
     switch (request.requestType) {
       case "openWebtoonsReading":
         res = openWebtoonsReading(request.data);

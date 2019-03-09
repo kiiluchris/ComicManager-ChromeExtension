@@ -1,14 +1,27 @@
-import {get as httpGet} from 'axios';
+import axios from 'axios';
 
 chrome.runtime.onMessage.addListener(
   async function(request,sender,sendResponse){
+    const {windowId, url, index} = sender.tab
     let res;
     switch(request.requestType){
       case "novelUpdatesOpenPage":
-        res = novelUpdatesOpenPage(request.data, sender);
+        res = novelUpdatesOpenPage(request.data, {
+          tab: {
+            windowId,
+            url,
+            index,
+          }
+        });
         break;
       case "novelUpdatesOpenPageWayback":
-        res = novelUpdatesOpenPageWayback(request.data, sender);
+        res = novelUpdatesOpenPageWayback(request.data, {
+          tab: {
+            windowId,
+            url,
+            index,
+          }
+        });
         break;
       case "novelUpdatesOpenPageNext":
         res = novelUpdatesOpenPageNext(request.data, sender);
@@ -36,13 +49,13 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
-function getTabIndex(selectFunc, clampFunc){
-  return async (tab, offset = 1) => { 
+function getTabIndex(selectFunc: FnN<number>, clampFunc: Fn1<number>){
+  return async (tab: {url: string, index: number}, offset = 1) => { 
     let index =  tab.index + offset;
     const novels = await getNovels();
     const parentURL = tab.url.match(/.*\//)[0] + "*";
     if(novels.hasOwnProperty(parentURL)){
-      const tabs = await new Promise(res => {
+      const tabs: chrome.tabs.Tab[] = await new Promise(res => {
         chrome.tabs.query({}, res)
       });
       const urls = novels[parentURL].map(({url}) => url);
@@ -60,13 +73,15 @@ function getTabIndex(selectFunc, clampFunc){
 
 const getMaxTabIndex = getTabIndex(Math.max, x => x);
 const getMinTabIndex = getTabIndex(Math.min, Math.max.bind(null, 0));
-const novelUrlMatch = (ch, tab) => new RegExp(ch.replace(/\?/g, "\\?") + '/?$').test(tab);
+const novelUrlMatch = (ch: string, tab: string) => new RegExp(ch.replace(/\?/g, "\\?") + '/?$').test(tab);
 
-async function novelUpdatesSaveUrl({url, parent, wayback}, sender){
+async function novelUpdatesSaveUrl({url, parent, wayback}: {
+  url: string, parent: novelupdates.Parent, wayback: boolean
+}, sender: chrome.runtime.MessageSender){
   return await saveCurrentNovelTab(parent, {url}, wayback)
 }
 
-async function novelUpdatesOpenParent({page}, sender){
+async function novelUpdatesOpenParent({page}: {page: string}, sender: chrome.runtime.MessageSender){
   const index = await getMinTabIndex({
     url: page,
     index: 1000
@@ -81,7 +96,12 @@ async function novelUpdatesOpenParent({page}, sender){
   });
 }
 
-async function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
+async function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback} : {
+  current: novelupdates.Parent,
+  parent: novelupdates.UrlObj,
+  url: string,
+  wayback: boolean
+}){
   const {url:u} = await fetch(url, {method: 'HEAD'});
   await deleteCurrentNovelTab(parent, current);
   await saveCurrentNovelTab(parent, {url:u}, wayback);
@@ -90,7 +110,12 @@ async function replaceMonitorNovelUpdatesUrl({current, parent, url, wayback}){
   })
 }
 
-async function novelUpdatesOpenPageNext(options, sender){
+async function novelUpdatesOpenPageNext(options: novelupdates.PageOpenOpts & {
+  parent: {
+    url: string,
+    index: number
+  }
+}, sender: chrome.runtime.MessageSender){
   const openFunc = options.wayback ? novelUpdatesOpenPageWayback : novelUpdatesOpenPage;
   return openFunc(options, {
     tab: {
@@ -100,8 +125,14 @@ async function novelUpdatesOpenPageNext(options, sender){
   });
 }
 
-async function novelUpdatesOpenPage(options, sender) {
-  const newTabData = {};
+async function novelUpdatesOpenPage(options: novelupdates.PageOpenOpts, sender: {
+  tab: {
+    windowId: number,
+    url: string,
+    index: number
+  }
+}) {
+  const newTabData: {index?: number} = {};
   const {url} = await fetch(options.url, {method: 'HEAD'});
   if(options.save){
     newTabData.index = await getMaxTabIndex(sender.tab);    
@@ -118,15 +149,27 @@ async function novelUpdatesOpenPage(options, sender) {
   });;
 }
 
-function novelUpdatesOpenPageWayback(options, sender){  
-  return httpGet(`https://comic-manager.herokuapp.com?url=${options.url}`).then(({data}) => {
+function novelUpdatesOpenPageWayback(options: novelupdates.PageOpenOpts, sender: {
+  tab: {
+    windowId: number,
+    url: string,
+    index: number
+  }
+}){  
+  return axios.get(`https://comic-manager.herokuapp.com?url=${options.url}`).then(({data}: {
+    data: {
+      closest: {
+        url: string
+      }
+    }
+  }) => {
     const {closest} = data;
     if(closest){
       return novelUpdatesOpenPage({...options, url: closest.url}, sender);
     } else {
       throw new Error('Url not available on wayback machine');
     }
-  }).catch(e => {
+  }).catch((e: Error & { response: {data: object}}) => {
     console.error(e);
     if(e.response){
       console.error(e.response.data);
@@ -134,7 +177,12 @@ function novelUpdatesOpenPageWayback(options, sender){
   });
 }
 
-function novelUpdatesBGNext(options) {
+function novelUpdatesBGNext(options: {
+  parent: novelupdates.Parent,
+  wayback: boolean,
+  tabId: number,
+  save: boolean
+}) {
   return new Promise(res => {
     chrome.tabs.sendMessage(options.parent.id, {
       requestType: "novelUpdatesUINext",
@@ -149,13 +197,16 @@ function novelUpdatesBGNext(options) {
   }).then(novelUpdatesRemoveFromStore);
 }
 
-function novelUpdatesRemoveFromStore(options) {
+function novelUpdatesRemoveFromStore(options: { 
+  current: novelupdates.Parent, 
+  parent: novelupdates.Parent
+}) {
   return new Promise(res => {
     chrome.tabs.remove(options.current.id, res);
   }).then(_ => deleteCurrentNovelTab(options.parent, options.current))
 }
 
-function saveCurrentNovelTab(parent, current, wayback) {
+function saveCurrentNovelTab(parent: novelupdates.UrlObj, current: novelupdates.UrlObj, wayback: boolean) {
   return new Promise(res => {
     chrome.storage.local.get("novels", function (data) {
       let novels = data.novels || {};
@@ -177,10 +228,10 @@ function saveCurrentNovelTab(parent, current, wayback) {
   })
 }
 
-function deleteCurrentNovelTab(parent, current) {
+function deleteCurrentNovelTab(parent: novelupdates.UrlObj, current: novelupdates.UrlObj) {
   return new Promise(res => {
     chrome.storage.local.get("novels", function (data) {
-      let novels = data.novels || {};
+      let novels: novelupdates.Novels = data.novels || {};
       let key = parent.url.match(/.*\//)[0] + "*";
       if(novels[key]){
         novels[key] = novels[key].filter(n => !novelUrlMatch(n.url, current.url));
@@ -194,7 +245,7 @@ function deleteCurrentNovelTab(parent, current) {
   })
 }
 
-function getNovels(){
+function getNovels() : Promise<novelupdates.Novels> {
   return new Promise(res => 
     chrome.storage.local.get("novels", function ({novels = {}} = {}) {
       res(novels);
@@ -202,7 +253,7 @@ function getNovels(){
   );
 }
 
-function filterOutWeekOldNovels(novels = [], data = []){
+function filterOutWeekOldNovels(novels: novelupdates.StorageEntry[] = [], data: novelupdates.StorageEntry[] = []): novelupdates.StorageEntry[]{
   if(novels.length === 0) return data;
   const novel = novels.shift();
   if(Date.now() - novel.time < 259200000){
@@ -213,7 +264,7 @@ function filterOutWeekOldNovels(novels = [], data = []){
   return filterOutWeekOldNovels(novels, data);
 }
 
-function cleanNovels(novels = {}, data = {}){
+function cleanNovels(novels: novelupdates.Novels = {}, data: novelupdates.Novels = {}) : novelupdates.Novels{
   const novelKeys = Object.keys(novels);
   if(novelKeys.length === 0) return Object.freeze(data);
   const key = novelKeys[0];
@@ -239,7 +290,7 @@ chrome.tabs.onUpdated.addListener(
         }
         const cleanedNovels = cleanNovels(novels);
         chrome.storage.local.set({novels: cleanedNovels});
-        const tabs = await new Promise(res => {
+        const tabs: chrome.tabs.Tab[] = await new Promise(res => {
           chrome.tabs.query({url: 'https://www.novelupdates.com/series/*'}, res);
         });
         for(const key in cleanedNovels){
@@ -282,8 +333,8 @@ chrome.runtime.onInstalled.addListener(
     });
 
   
-  chrome.storage.local.get("novels", async function ({novels}) {
-    const tabs =  await new Promise(res => {
+  chrome.storage.local.get("novels", async function ({novels}: {novels: novelupdates.Novels}) {
+    const tabs: chrome.tabs.Tab[] =  await new Promise(res => {
       chrome.tabs.query({}, res);
     });
 

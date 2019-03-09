@@ -2,29 +2,27 @@
 
 import 'jquery-ui/ui/widgets/sortable';
 import {webtoonDateFormatted} from '../shared';
+import { webtoons } from '../../typings/webtoons';
 
 
-const currentDate = document
-  .querySelector('ul#_webtoonList span.update')
-  .innerText.split('\n')[1].trim();
+const currentDateEl: HTMLSpanElement | null = document.querySelector('ul#_webtoonList span.update');
 
-
-function setupOverlays({titleOrder, offset = 0}) {
+function setupOverlays(currentDate: string, {titleOrder, offset = 0}: webtoons.OverlayData) {
   var list = "ul#_webtoonList";
   // let listItems = "li:has(.txt_ico_up)"; 
   // if(offset > 0){
   const listItems = `li:has(span.update:contains("${webtoonDateFormatted(currentDate, offset)}"))`;
   // }
   var listOverlays = `${listItems} div.overlay`;
-  if ($(listOverlays).length === 0) {
+  if (jQuery(listOverlays).length === 0) {
     var overLaySpans = "overlay-spans";
-    var spanButton = (text) => `<span>${text}</span>`;
-    var webtoonList = $(list);
+    var spanButton = (text: string) => `<span>${text}</span>`;
+    var webtoonList = jQuery(list);
     var todayComics = webtoonList.find(listItems);
-    var input = $(`<input type="checkbox">`);
-    var send = $(spanButton("open"));
-    var exit = $(spanButton("cancel"));
-    var svg = $(`
+    var input = jQuery(`<input type="checkbox">`);
+    var send = jQuery(spanButton("open"));
+    var exit = jQuery(spanButton("cancel"));
+    var svg = jQuery(`
     <label for="check" class="check">
     <svg width="250" height="180" style="transform:scale(0.3);">
     <circle cx="125" cy="90" r="60" />
@@ -32,7 +30,7 @@ function setupOverlays({titleOrder, offset = 0}) {
     <path d="M75 90H175" class="path2"></path>
     </svg>    
     </label>`);
-    var div = $(`
+    var div = jQuery(`
     <div class="overlay">
     <div class="${overLaySpans}">
     </div>
@@ -40,36 +38,36 @@ function setupOverlays({titleOrder, offset = 0}) {
     `);
     if (titleOrder.length) {
       let sortedItems = new Array(titleOrder.length);
-      let remainingItems = [];
+      let remainingItems: HTMLElement[] = [];
       $.each(todayComics, function() {
-        let i = titleOrder.findIndex((el) => el.link === this.querySelector('a').href);
+        let i = titleOrder.findIndex((el: webtoons.StorageEntry) => el.link === this.querySelector('a').href);
         if (~i) {
-          $(this).addClass('overlay-input-selected');
+          jQuery(this).addClass('overlay-input-selected');
           sortedItems[titleOrder.length - i] = this;
         } else {
           remainingItems.unshift(this);
         }
-        $(this).remove();
+        jQuery(this).remove();
       })
       $.each(remainingItems.concat(sortedItems), function() {
         if (this){
-          $(list).prepend(this);
+          jQuery(list).prepend(this);
         }
       })
-      todayComics = $(list).find(listItems);
+      todayComics = jQuery(list).find(listItems);
     }
     //  &#10004; tick signx
     //  &#10006; x
-    svg.on('click', function(e){
-      $(this).toggleClass('selected');
-      $(this).siblings('input')[0].click();
+    svg.on('click', function(_e){
+      jQuery(this).toggleClass('selected');
+      jQuery(this).siblings('input')[0].click();
     });
-    send.on("click", function(e) {
-      var items = $(`${list} ${listItems}`).filter(":has(input:checked)")
+    send.on("click", function(_e) {
+      var items = jQuery(`${list} ${listItems}`).filter(":has(input:checked)")
       .map(function() {
         return {
-          title: $(this).find(".subj span").text(),
-          link: $(this).find("a").attr("href"),
+          title: jQuery(this).find(".subj span").text(),
+          link: jQuery(this).find("a").attr("href"),
         };
       }).get();
       chrome.runtime.sendMessage({
@@ -85,8 +83,9 @@ function setupOverlays({titleOrder, offset = 0}) {
     div.find("." + overLaySpans).append(send, exit);
     todayComics.append(div);
     $.each(todayComics, function() {
-      if ($(this).hasClass('overlay-input-selected')) {
-        this.querySelector('label.check').click();
+      if (jQuery(this).hasClass('overlay-input-selected')) {
+        const label: HTMLInputElement = this.querySelector('label.check')
+        label.click();
       }
     })
     webtoonList.sortable({
@@ -95,26 +94,26 @@ function setupOverlays({titleOrder, offset = 0}) {
     
     chrome.runtime.sendMessage({ requestType: "closeWindow" });
     
-    function removeOverlay(e) {
+    function removeOverlay(_e: any) {
       webtoonList.sortable('destroy');
       webtoonList.find(listOverlays).remove();
     }
   }
 }
 
-function editOverlayInputs(selectAll) {
+function editOverlayInputs(selectAll: boolean) {
   let selector = ":has(input:checked)";
   if(selectAll){
     selector = ":not("+selector+")";
   }
-  $("ul#_webtoonList li:has(.txt_ico_up) div.overlay"+selector+" label.check")
+  jQuery("ul#_webtoonList li:has(.txt_ico_up) div.overlay"+selector+" label.check")
     .trigger("click");
 }
 
-function openNextChapters({numOfChapters}) {
-  var links = $("div#topEpisodeList .episode_cont ul li:has(a.on)").nextAll()
+function openNextChapters({numOfChapters}: webtoons.NextChapterData) {
+  var links = jQuery("div#topEpisodeList .episode_cont ul li:has(a.on)").nextAll()
   .map(function() {
-    return $(this).children("a").attr("href");
+    return jQuery(this).children("a").attr("href");
   }).get();
   chrome.runtime.sendMessage({  
     requestType: "openWebtoonsReading",
@@ -126,20 +125,21 @@ function openNextChapters({numOfChapters}) {
 }
 
 function scrollWebtoon() {
-  $('.viewer_lst .viewer_img img')
-    .each(function() {
-      this.src = $(this).data('url');
+  jQuery('.viewer_lst .viewer_img img')
+    .each(function(_i, el: HTMLImageElement) {
+      el.src = jQuery(el).data('url');
     });
   window.scroll(0, 0);
 }
 
 chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
+  function(request, _sender, sendResponse) {
+    const currentDate = currentDateEl.innerText.split('\n')[1].trim();
     let res = null;
     switch (request.requestType) {
       case "startPromptDraggable":
       case "startPromptDraggableYesterday":
-      setupOverlays(request.data);
+      setupOverlays(currentDate, request.data);
       break;
       case "openNextChaptersWebtoons":
       openNextChapters(request.data);

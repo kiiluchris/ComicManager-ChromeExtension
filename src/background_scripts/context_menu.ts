@@ -1,12 +1,13 @@
 'use strict';
-import {openKissmangaChapter, openNextChaptersKissmanga} from './kissmanga';
-import {getTitleOrder, get} from './webtoons';
+import {getTitleOrder} from './webtoons';
 
-function defaultCB(tab, info, val){
+function defaultCB(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData, val: object = {}){
   chrome.tabs.sendMessage(tab.id, {requestType: info.menuItemId, ...val});
 }
 
-async function webtoonPrompt(tab, info, data = {}){
+async function webtoonPrompt(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData, data = {
+  offset: 0
+}){
   defaultCB(tab, info, {
     data: {
       titleOrder: await getTitleOrder(tab.id, {
@@ -17,23 +18,16 @@ async function webtoonPrompt(tab, info, data = {}){
   })
 }
 
-const callbacks = {
-  openKissmangaYesterday(){
-    openKissmangaChapter(1);
-  },
-  openKissmangaToday(){
-    openKissmangaChapter();
-  },
-  startPromptDraggable(tab, info){
+const callbacks: context_menus.Callbacks = {
+  startPromptDraggable(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData){
     webtoonPrompt(tab, info).catch(console.error);
   },
-  startPromptDraggableYesterday(tab, info){
+  startPromptDraggableYesterday(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData){
     webtoonPrompt(tab, info, {
       offset: 1
     }).catch(console.error);
   },
-  openNextChaptersKissmanga,
-  openNextChaptersWebtoons(tab, info){
+  openNextChaptersWebtoons(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData){
     defaultCB(tab, info, {
       requestType: info.parentMenuItemId,
       data: {
@@ -48,7 +42,8 @@ const webtoonFavPattern = [
 const kissmangaAllPattern = [
   "*://kissmanga.com/*"
 ];
-const contextMenuData = [
+
+const contextMenuData: chrome.contextMenus.CreateProperties[] = [
   {
     title: "Open next number of chapters",
     id: "openNextChaptersWebtoons",
@@ -113,7 +108,7 @@ for(let i = 1; i < 4; i++){
 
 chrome.runtime.onInstalled.addListener(function() {
   for (var i = 0; i < contextMenuData.length; i++) {
-    let {cb, ...item} = contextMenuData[i];
+    const item = contextMenuData[i];
     chrome.contextMenus.create(item);
   }
 });

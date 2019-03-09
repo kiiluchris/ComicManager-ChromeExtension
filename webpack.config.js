@@ -5,6 +5,7 @@ const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
 const UglifyJSWebpackPlugin = require('uglifyjs-webpack-plugin');
 const {optionsUITemplatePath} = require('extension-kitchen-sink/import-export-storage');
+const { CheckerPlugin } = require('awesome-typescript-loader')
 require('dotenv').config();
 
 const config = {
@@ -19,10 +20,10 @@ const config = {
     ],
     options: [
       "babel-polyfill",
-      path.join(__dirname, 'src', 'options.js'),
+      path.join(__dirname, 'src', 'options'),
     ],
   },
-  devtool: 'source-map',
+  devtool: 'inline-source-map',
   output: {
     path: path.join(__dirname, "dist"),
     filename: '[name].js',
@@ -35,24 +36,14 @@ const config = {
         loaders: ['style-loader', 'css-loader']
       },
       {
-        test: /\.js$/,
-        exclude: /node_modules\/(?!extension-kitchen-sink)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: [["env", {
-              targets: {
-                browsers: ['last 2 Chrome versions']
-              }
-            }]],
-            plugins: [
-              "transform-object-rest-spread",
-              // "transform-async-to-generator"
-            ]
-          }
-        }
+        test: /\.tsx?$/,
+        use: 'awesome-typescript-loader',
+        exclude: /node_modules/
       }
     ]
+  },
+  resolve: {
+    extensions: [ '.tsx', '.ts', '.js' ]
   },
   plugins: [
     // new (require('./chrome-reloader'))({
@@ -67,10 +58,11 @@ const config = {
       filename: 'options.html',
       chunks: ['options']
     }),
-    new UglifyJSWebpackPlugin({
-      sourceMap: true,
-      uglifyOptions: { ecma: 8 },
-    }),
+    new CheckerPlugin()
+    // new UglifyJSWebpackPlugin({
+    //   sourceMap: true,
+    //   uglifyOptions: { ecma: 8 },
+    // }),
   ]
 };
 

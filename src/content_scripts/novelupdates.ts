@@ -5,16 +5,16 @@
 }());
 
 function checkBoxMonitor(){
-  const checkboxes = document.querySelectorAll("table#myTable td input");
+  const checkboxes: NodeListOf<HTMLInputElement> = document.querySelectorAll("table#myTable td input");
   const elements = [...document.querySelectorAll("table#myTable td a.chp-release")];
   for (let i = 0; i < elements.length; i++) {
-    elements[i].addEventListener("click", function(e){
+    elements[i].addEventListener("click", function(e: MouseEvent){
       const wayback =  e.shiftKey;
       e.preventDefault();
       checkboxes[i].click();
       chrome.runtime.sendMessage({
         data: {
-          url: e.target.href,
+          url: (<HTMLAnchorElement>e.target).href,
           save: !e.ctrlKey,
           wayback
         },
@@ -39,7 +39,7 @@ function openNextPage(){
   }
 }
 
-function monitorNovelUpdates(options, extensionName) {
+function monitorNovelUpdates(options: novelupdates.ReqData, extensionName: string) {
   const pageURL = window.location.href.replace(/#.*/, '');
   for(const el of document.querySelectorAll('a')) {
     if(el.href.replace(/#.*/, '') !== pageURL){
@@ -76,8 +76,8 @@ function monitorNovelUpdates(options, extensionName) {
     extension: extensionName,
     status: "complete" 
   }, window.location.href);
-  window.addEventListener("message", ({data:{extension, url, message}}) => {
-    const messageHandlerArgs = ({
+  window.addEventListener("message", ({data:{extension, url, message}} : UserScriptReq) => {
+    const messageHandlerArgsObj: UserScriptHandlerObj = {
       novelUpdatesSaveUrl: [{
         data: {
           url,
@@ -96,14 +96,15 @@ function monitorNovelUpdates(options, extensionName) {
         requestType: "replaceMonitorNovelUpdatesUrl",
         data: {...options, url }
       }]
-    })[message]
+    };
+    const messageHandlerArgs = messageHandlerArgsObj[message]
     if(extension === extensionName && messageHandlerArgs){
-      chrome.runtime.sendMessage(...messageHandlerArgs);
+      chrome.runtime.sendMessage.apply(null, messageHandlerArgs);
     }
   });
 }
 
-function novelUpdatesUINext(options, sendResponse) {
+function novelUpdatesUINext(options: novelupdates.StorageEntry, sendResponse: (...args: any) => any) {
   const $nextChapterLink = $('table#myTable tbody tr[style].newcolorme a.chp-release').last();
   if($nextChapterLink.length === 0) {
     openNextPage();

@@ -26,7 +26,7 @@ function extensionTab(){
 }
 
 
-export function openPages(urls, tabId, windowId) {
+export function openPages(urls: string[], tabId?: number, windowId?: number) {
   urls.forEach((url) => {
       chrome.tabs.create({
           windowId,
