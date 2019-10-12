@@ -5,24 +5,32 @@
     "moduleResolution": "node",
     "module": "es6",
     "target": "es6",
-    "lib": ["es2017", "dom", "dom.iterable"],
+    "lib": [
+      "es2017",
+      "dom",
+      "dom.iterable"
+    ],
     // "jsx": "react",
     "allowJs": true,
-    "typeRoots": ["./typings", "node_modules/@types"],
+    "typeRoots": [
+      "./typings",
+      "node_modules/@types"
+    ],
     "types": [
       "chrome",
       "jquery",
       "jqueryui",
+      "lodash",
       "moment",
       "moment-timezone",
     ]
   },
   "include": [
-    "src/**/*", 
+    "src/**/*",
     "typings/**.d.ts"
   ],
   "exclude": [
-      "node_modules",
-      "**/*.spec.ts"
+    "node_modules",
+    "**/*.spec.ts"
   ]
 }

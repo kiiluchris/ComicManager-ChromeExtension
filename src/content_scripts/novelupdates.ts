@@ -1,82 +1,80 @@
-(function () {
-  if(/novelupdates\.com\/series\/[a-zA-Z0-9\-]+\//.test(window.location.href)){
-    checkBoxMonitor();
-  }
-}());
+import { browser } from 'webextension-polyfill-ts'
 
-function checkBoxMonitor(){
-  const checkboxes: NodeListOf<HTMLInputElement> = document.querySelectorAll("table#myTable td input");
-  const elements = [...document.querySelectorAll("table#myTable td a.chp-release")];
-  for (let i = 0; i < elements.length; i++) {
-    elements[i].addEventListener("click", function(e: MouseEvent){
-      const wayback =  e.shiftKey;
-      e.preventDefault();
-      checkboxes[i].click();
-      chrome.runtime.sendMessage({
-        data: {
-          url: (<HTMLAnchorElement>e.target).href,
-          save: !e.ctrlKey,
-          wayback
-        },
-        requestType: wayback ? "novelUpdatesOpenPageWayback" : "novelUpdatesOpenPage"
-      });
-      const $unclickedLinks = $('table#myTable tbody tr[style].newcolorme a.chp-release');
-      if(!document.querySelector('.sttitle a')){
-        setTimeout(() => window.location.reload(), 1000);
-      } else if($unclickedLinks.length === 0){
-        openNextPage();
-      }
+function checkBoxMonitorEvent(element: HTMLAnchorElement, checkbox: HTMLInputElement) {
+  return async (e: MouseEvent) => {
+    e.preventDefault();
+    checkbox.click();
+
+    const wayback = e.shiftKey;
+    const requestType = wayback ? "novelUpdatesOpenPageWayback" : "novelUpdatesOpenPage"
+    await browser.runtime.sendMessage({
+      data: {
+        url: element.href,
+        save: !e.ctrlKey,
+        wayback
+      },
+      requestType
     });
+
+    const $unclickedLinks = $('table#myTable tbody tr[style].newcolorme a.chp-release');
+    if (!document.querySelector('.sttitle a')) {
+      setTimeout(() => window.location.reload(), 1000);
+    } else if ($unclickedLinks.length === 0) {
+      openNextPage();
+    }
   }
 }
 
-function openNextPage(){
+export function checkBoxMonitor() {
+  const checkboxes: NodeListOf<HTMLInputElement> = document.querySelectorAll("table#myTable td input");
+  const elements: NodeListOf<HTMLAnchorElement> = document.querySelectorAll("table#myTable td a.chp-release");
+  elements.forEach((element, i) => {
+    element.addEventListener("click", checkBoxMonitorEvent(element, checkboxes[i]));
+  })
+}
+
+function openNextPage() {
   const $currentPage = $("div.digg_pagination em.current:not(:first-child)");
-  if($currentPage.length !== 0){
+  if ($currentPage.length !== 0) {
     setTimeout(() => {
       $currentPage.prev()[0].click();
     }, 2500)
   }
 }
 
-function monitorNovelUpdates(options: novelupdates.ReqData, extensionName: string) {
-  const pageURL = window.location.href.replace(/#.*/, '');
-  for(const el of document.querySelectorAll('a')) {
-    if(el.href.replace(/#.*/, '') !== pageURL){
-      el.addEventListener('click', function(e){
-        e.preventDefault();
-        chrome.runtime.sendMessage({
-          requestType: "replaceMonitorNovelUpdatesUrl",
-          data: {...options, url: this.href}
-        });
-      })
+function monitorNovelUpdatesControls(options: novelupdates.ReqData) {
+  let finishedMonitoring = false;
+  window.addEventListener("keyup", async function (e) {
+    if (!e.ctrlKey || finishedMonitoring) return
+    if (e.key === "ArrowUp") {
+      await browser.runtime.sendMessage({
+        requestType: "novelUpdatesOpenParent",
+        data: options
+      });
+      return
     }
-  }
-  window.addEventListener("keyup", function(e){
-    if(e.ctrlKey){
-      if(e.key === "ArrowRight"){
-        chrome.runtime.sendMessage({
-          requestType: options.parent.id ? "novelUpdatesBGNext" : "novelUpdatesRemoveFromStore",
-          data: options
-        });
-      } else if (e.key === "ArrowLeft") {
-        chrome.runtime.sendMessage({
-          requestType: "novelUpdatesRemoveFromStore",
-          data: options
-        });
-      } else if (e.key === "ArrowUp") {
-        chrome.runtime.sendMessage({
-          requestType: "novelUpdatesOpenParent",
-          data: options
-        });
-      }
+    finishedMonitoring = true
+    if (e.key === "ArrowRight") {
+      await browser.runtime.sendMessage({
+        requestType: options.parent.id ? "novelUpdatesBGNext" : "novelUpdatesRemoveFromStore",
+        data: options
+      });
+    } else if (e.key === "ArrowLeft") {
+      await browser.runtime.sendMessage({
+        requestType: "novelUpdatesRemoveFromStore",
+        data: options
+      });
     }
   });
+}
+
+
+function monitorNovelUpdatesUserscriptListener(options: novelupdates.ReqData, extensionName: string) {
   window.postMessage({
     extension: extensionName,
-    status: "complete" 
+    status: "complete"
   }, window.location.href);
-  window.addEventListener("message", ({data:{extension, url, message}} : UserScriptReq) => {
+  window.addEventListener("message", async ({ data: { extension, url, message } }: UserScriptReq) => {
     const messageHandlerArgsObj: UserScriptHandlerObj = {
       novelUpdatesSaveUrl: [{
         data: {
@@ -94,40 +92,60 @@ function monitorNovelUpdates(options: novelupdates.ReqData, extensionName: strin
       }],
       replaceMonitorNovelUpdatesUrl: [{
         requestType: "replaceMonitorNovelUpdatesUrl",
-        data: {...options, url }
-      }]
+        data: { ...options, url }
+      }, () => { }]
     };
     const messageHandlerArgs = messageHandlerArgsObj[message]
-    if(extension === extensionName && messageHandlerArgs){
-      chrome.runtime.sendMessage.apply(null, messageHandlerArgs);
+    if (extension === extensionName && messageHandlerArgs) {
+      await browser.runtime.sendMessage(messageHandlerArgs[0])
+        .then(messageHandlerArgs[1]);
     }
   });
 }
 
-function novelUpdatesUINext(options: novelupdates.StorageEntry, sendResponse: (...args: any) => any) {
+function monitorNovelUpdates(options: novelupdates.ReqData, extensionName: string) {
+  const pageURL = window.location.href.replace(/#.*/, '');
+  const linksToMonitor = [...document.querySelectorAll('a')]
+    .filter(el =>
+      el.href
+      && el.href.startsWith('http')
+      && el.href.replace(/#.*/, '') !== pageURL
+    );
+  linksToMonitor.forEach(el => {
+    el.addEventListener('click', async function (e) {
+      e.preventDefault();
+      await browser.runtime.sendMessage({
+        requestType: "replaceMonitorNovelUpdatesUrl",
+        data: { ...options, url: this.href }
+      });
+    })
+  })
+
+  monitorNovelUpdatesControls(options)
+  monitorNovelUpdatesUserscriptListener(options, extensionName)
+}
+
+async function novelUpdatesUINext(options: novelupdates.StorageEntry) {
   const $nextChapterLink = $('table#myTable tbody tr[style].newcolorme a.chp-release').last();
-  if($nextChapterLink.length === 0) {
+  if ($nextChapterLink.length === 0) {
     openNextPage();
   } else {
     $nextChapterLink[0].dispatchEvent(new MouseEvent('click', {
-      shiftKey: !!options.wayback, 
+      shiftKey: !!options.wayback,
       ctrlKey: false,
       cancelable: true
     }));
   }
-  
-  sendResponse();
 }
 
-chrome.runtime.onMessage.addListener(
-  function(request,sender,sendResponse){
-    switch(request.requestType){
+browser.runtime.onMessage.addListener(
+  function (request, _sender) {
+    switch (request.requestType) {
       case "monitorNovelUpdates":
-      monitorNovelUpdates(request.data, request.extensionName);
-      break;
+        monitorNovelUpdates(request.data, request.extensionName);
+        break;
       case "novelUpdatesUINext":
-      novelUpdatesUINext(request.data, sendResponse);
-      return true;
+        return novelUpdatesUINext(request.data);
     }
   }
 );

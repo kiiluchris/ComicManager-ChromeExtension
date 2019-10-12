@@ -3,48 +3,42 @@
 import './context_menu';
 import './novelupdates';
 import './webtoons';
+import { browser } from 'webextension-polyfill-ts'
 
-chrome.runtime.onMessage.addListener(
-  function(request,sender,sendResponse){
-    switch(request.requestType){
+browser.runtime.onMessage.addListener(
+  function (request, sender) {
+    let res;
+    switch (request.requestType) {
       case "extensionTab":
-        extensionTab();
+        res = extensionTab();
         break;
       case "openPages":
-        openPages(request.pages, request.tabId, sender.tab.windowId)
-        sendResponse();
-        break;
+        res = openPages(request.pages, request.tabId, sender.tab.windowId)
+        break
     }
+    return res
   }
 );
 
-function extensionTab(){
-  chrome.tabs.create({
-      url: "chrome://extensions",
-      active: true
+function extensionTab() {
+  return browser.tabs.create({
+    url: "chrome://extensions",
+    active: true
   })
 }
 
 
-export function openPages(urls: string[], tabId?: number, windowId?: number) {
-  urls.forEach((url) => {
-      chrome.tabs.create({
-          windowId,
-          active: false,
-          url: url
-      });
+export async function openPages(urls: string[], tabId?: number, windowId?: number) {
+  const tabs = urls.map((url) => {
+    return browser.tabs.create({
+      windowId,
+      active: false,
+      url: url
+    });
   });
+  await Promise.all(tabs)
   if (tabId) {
-      chrome.tabs.remove(tabId);
+    await browser.tabs.remove(tabId);
   }
 }
 
-
-
-chrome.browserAction.onClicked.addListener(function(){
-  chrome.management.setEnabled("ngpampappnmepgilojfohadhhmbhlaek", false, function(){
-    chrome.management.setEnabled("ngpampappnmepgilojfohadhhmbhlaek", true, function () {
-      chrome.tabs.reload();
-    });
-  });
-})

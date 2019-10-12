@@ -1,39 +1,55 @@
 'use strict';
-import {getTitleOrder} from './webtoons';
+import { getTitleOrder } from './webtoons';
+import { browser, Menus, Tabs } from 'webextension-polyfill-ts'
 
-function defaultCB(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData, val: object = {}){
-  chrome.tabs.sendMessage(tab.id, {requestType: info.menuItemId, ...val});
+function defaultCB(tab: Tabs.Tab, info: Menus.OnClickData, val: object = {}) {
+  return browser.tabs.sendMessage(tab.id, { requestType: info.menuItemId, ...val });
 }
 
-async function webtoonPrompt(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData, data = {
+async function webtoonPrompt(tab: Tabs.Tab, info: Menus.OnClickData, data = {
   offset: 0
-}){
-  defaultCB(tab, info, {
+}) {
+  const titleOrder = await getTitleOrder(tab.id, {
+    offset: data.offset
+  })
+  return await defaultCB(tab, info, {
     data: {
-      titleOrder: await getTitleOrder(tab.id, {
-        offset: data.offset
-      }),
+      titleOrder,
       ...data
     }
   })
 }
 
 const callbacks: context_menus.Callbacks = {
-  startPromptDraggable(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData){
-    webtoonPrompt(tab, info).catch(console.error);
+  startPromptDraggable(tab: Tabs.Tab, info: Menus.OnClickData) {
+    return webtoonPrompt(tab, info).catch(console.error);
   },
-  startPromptDraggableYesterday(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData){
-    webtoonPrompt(tab, info, {
+  startPromptDraggableYesterday(tab: Tabs.Tab, info: Menus.OnClickData) {
+    return webtoonPrompt(tab, info, {
       offset: 1
     }).catch(console.error);
   },
-  openNextChaptersWebtoons(tab: chrome.tabs.Tab, info: chrome.contextMenus.OnClickData){
-    defaultCB(tab, info, {
+  async startPromptDraggableNOffset(tab: Tabs.Tab, info: Menus.OnClickData) {
+    const offset = await browser.tabs.sendMessage(tab.id, {
+      requestType: 'startPromptDraggableNOffset'
+    }).catch(_e => 0)
+    const moddedInfo = {
+      ...info,
+      menuItemId: "startPromptDraggable"
+    }
+    return await webtoonPrompt(tab, moddedInfo, {
+      offset,
+    }).catch(console.error);
+  },
+  openNextChaptersWebtoons(tab: Tabs.Tab, info: Menus.OnClickData) {
+    const menuId = <string>info.menuItemId
+    const numOfChapters = menuId.match(/\d+$/)
+    return defaultCB(tab, info, {
       requestType: info.parentMenuItemId,
       data: {
-        numOfChapters: parseInt(info.menuItemId.match(/\d+$/))
+        numOfChapters: parseInt(numOfChapters[0])
       }
-    });
+    }).catch(console.error);
   }
 }
 const webtoonFavPattern = [
@@ -43,22 +59,26 @@ const kissmangaAllPattern = [
   "*://kissmanga.com/*"
 ];
 
-const contextMenuData: chrome.contextMenus.CreateProperties[] = [
+const contextMenuData: Menus.CreateCreatePropertiesType[] = [
   {
     title: "Open next number of chapters",
     id: "openNextChaptersWebtoons",
     documentUrlPatterns: [
       "*://*.webtoons.com/en/*/viewer*"
     ]
-  },{
+  }, {
     title: "Open Prompt(Overlay)",
     id: "startPromptDraggable",
     documentUrlPatterns: webtoonFavPattern
-  },{
+  }, {
     title: "Open Prompt Yesterday(Overlay)",
     id: "startPromptDraggableYesterday",
     documentUrlPatterns: webtoonFavPattern
-  },{
+  }, {
+    title: "Open Prompt N Offset",
+    id: "startPromptDraggableNOffset",
+    documentUrlPatterns: webtoonFavPattern
+  }, {
     title: "Select all comics",
     id: "fillWebtoonOverlayInputs",
     documentUrlPatterns: webtoonFavPattern
@@ -67,15 +87,15 @@ const contextMenuData: chrome.contextMenus.CreateProperties[] = [
     title: "Unselect all comics",
     id: "clearWebtoonOverlayInputs",
     documentUrlPatterns: webtoonFavPattern
-  },{
+  }, {
     title: "Open Today's Comics",
     id: "openKissmangaToday",
     documentUrlPatterns: kissmangaAllPattern
-  },{
+  }, {
     title: "Open Yesterday's Comics",
     id: "openKissmangaYesterday",
     documentUrlPatterns: kissmangaAllPattern
-  },{
+  }, {
     title: "Open next 5 chapters",
     id: "openNextChaptersKissmanga",
     documentUrlPatterns: [
@@ -84,7 +104,7 @@ const contextMenuData: chrome.contextMenus.CreateProperties[] = [
     contexts: [
       'all'
     ]
-  },{
+  }, {
     title: "Open next chapter",
     id: "getTseirpNextChapter",
     documentUrlPatterns: [
@@ -93,7 +113,7 @@ const contextMenuData: chrome.contextMenus.CreateProperties[] = [
   }
 ];
 
-for(let i = 1; i < 4; i++){
+for (let i = 1; i < 4; i++) {
   const num = i * 5;
   contextMenuData.push({
     title: `${num} chapters`,
@@ -106,14 +126,15 @@ for(let i = 1; i < 4; i++){
 }
 
 
-chrome.runtime.onInstalled.addListener(function() {
+browser.runtime.onInstalled.addListener(function () {
   for (var i = 0; i < contextMenuData.length; i++) {
     const item = contextMenuData[i];
-    chrome.contextMenus.create(item);
+    browser.contextMenus.create(item);
   }
 });
 
-chrome.contextMenus.onClicked.addListener(function(info, tab) {
-  (callbacks[info.parentMenuItemId] || callbacks[info.menuItemId] || defaultCB)(tab, info);
+browser.contextMenus.onClicked.addListener(async function (info, tab) {
+  const cb = <(t: Tabs.Tab, i: Menus.OnClickData, ...args: any) => Promise<any>>(callbacks[info.parentMenuItemId] || callbacks[info.menuItemId] || defaultCB)
+  return await cb(tab, info);
 });
 

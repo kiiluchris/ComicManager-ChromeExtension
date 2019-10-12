@@ -4,11 +4,13 @@ const path = require('path');
 const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
 const UglifyJSWebpackPlugin = require('uglifyjs-webpack-plugin');
-const {optionsUITemplatePath} = require('extension-kitchen-sink/import-export-storage');
+const { optionsUITemplatePath } = require('extension-kitchen-sink/import-export-storage');
 const { CheckerPlugin } = require('awesome-typescript-loader')
 require('dotenv').config();
 
 const config = {
+  mode: 'development',
+  // mode: 'production',
   entry: {
     content_scripts: [
       "babel-polyfill",
@@ -43,7 +45,7 @@ const config = {
     ]
   },
   resolve: {
-    extensions: [ '.tsx', '.ts', '.js' ]
+    extensions: ['.tsx', '.ts', '.js']
   },
   plugins: [
     // new (require('./chrome-reloader'))({
