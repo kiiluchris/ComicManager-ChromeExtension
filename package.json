@@ -6,8 +6,9 @@
   "scripts": {
     "build": "webpack",
     "watch": "webpack -w",
-    "ext:pkg": "web-ext build -o -s dist/ -a builds/",
-    "ext:sign": "web-ext sign -o -s dist/ -a builds/"
+    "ext:pkg": "web-ext build -o",
+    "ext:sign": "./scripts/web-ext-cmd.sh sign",
+    "ext:run": "./scripts/web-ext-cmd.sh run"
   },
   "keywords": [],
   "author": "",

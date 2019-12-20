@@ -65,45 +65,34 @@ const contextMenuData: Menus.CreateCreatePropertiesType[] = [
     id: "openNextChaptersWebtoons",
     documentUrlPatterns: [
       "*://*.webtoons.com/en/*/viewer*"
-    ]
+    ],
+    contexts: [ 'all' ]
   }, {
     title: "Open Prompt(Overlay)",
     id: "startPromptDraggable",
-    documentUrlPatterns: webtoonFavPattern
+    documentUrlPatterns: webtoonFavPattern,
+    contexts: [ 'all' ]
   }, {
     title: "Open Prompt Yesterday(Overlay)",
     id: "startPromptDraggableYesterday",
-    documentUrlPatterns: webtoonFavPattern
+    documentUrlPatterns: webtoonFavPattern,
+    contexts: [ 'all' ]
   }, {
     title: "Open Prompt N Offset",
     id: "startPromptDraggableNOffset",
-    documentUrlPatterns: webtoonFavPattern
+    documentUrlPatterns: webtoonFavPattern,
+    contexts: [ 'all' ]
   }, {
     title: "Select all comics",
     id: "fillWebtoonOverlayInputs",
-    documentUrlPatterns: webtoonFavPattern
+    documentUrlPatterns: webtoonFavPattern,
+    contexts: [ 'all' ]
   },
   {
     title: "Unselect all comics",
     id: "clearWebtoonOverlayInputs",
-    documentUrlPatterns: webtoonFavPattern
-  }, {
-    title: "Open Today's Comics",
-    id: "openKissmangaToday",
-    documentUrlPatterns: kissmangaAllPattern
-  }, {
-    title: "Open Yesterday's Comics",
-    id: "openKissmangaYesterday",
-    documentUrlPatterns: kissmangaAllPattern
-  }, {
-    title: "Open next 5 chapters",
-    id: "openNextChaptersKissmanga",
-    documentUrlPatterns: [
-      "*://kissmanga.com/*?id=*"
-    ],
-    contexts: [
-      'all'
-    ]
+    documentUrlPatterns: webtoonFavPattern,
+    contexts: [ 'all' ]
   }, {
     title: "Open next chapter",
     id: "getTseirpNextChapter",
@@ -121,17 +110,18 @@ for (let i = 1; i < 4; i++) {
     parentId: "openNextChaptersWebtoons",
     documentUrlPatterns: [
       "*://*.webtoons.com/en/*/viewer*"
-    ]
+    ],
+    contexts: [ 'all' ]
   });
 }
 
 
-browser.runtime.onInstalled.addListener(function () {
-  for (var i = 0; i < contextMenuData.length; i++) {
-    const item = contextMenuData[i];
-    browser.contextMenus.create(item);
-  }
-});
+// browser.runtime.onInstalled.addListener(function () {
+for (var i = 0; i < contextMenuData.length; i++) {
+  const item = contextMenuData[i];
+  browser.contextMenus.create(item);
+}
+// });
 
 browser.contextMenus.onClicked.addListener(async function (info, tab) {
   const cb = <(t: Tabs.Tab, i: Menus.OnClickData, ...args: any) => Promise<any>>(callbacks[info.parentMenuItemId] || callbacks[info.menuItemId] || defaultCB)

@@ -15,7 +15,7 @@ async function getDate(tabId: number): Promise<string> {
 
 export async function getTitleOrder(tabId: number, { offset = 0 } = {}) {
   const date = await getDate(tabId);
-  const data = await browser.storage.local.get('webtoonOrder')
+  const data = await browser.storage.sync.get('webtoonOrder')
   let order = data.webtoonOrder;
   return order && order[getWebtoonDay(date, offset)] || [];
 }
@@ -25,10 +25,10 @@ async function saveTitleOrder(tabId: number, { order = [], offset = 0 }: {
   offset: number;
 }) {
   const date = await getDate(tabId);
-  const data = await browser.storage.local.get('webtoonOrder')
+  const data = await browser.storage.sync.get('webtoonOrder')
   let oldOrder = data.webtoonOrder || {};
   oldOrder[getWebtoonDay(date, offset)] = order;
-  await browser.storage.local.set({ webtoonOrder: oldOrder });
+  await browser.storage.sync.set({ webtoonOrder: oldOrder });
   return oldOrder
 }
 

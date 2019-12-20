@@ -48,57 +48,54 @@ function setupOverlaysElements(overLaySpans: string): OverlayElements {
   }
 }
 
-
-function setupOverlaysEvents(comicSelector: string, listParent: string, offset: number, { exit, svg, send }: OverlayElements) {
-  const getWebtoonList = (selector: string) => jQuery(selector)
-  const removeOverlay = (_e: Event) => {
+function removeOverlay(listParent: string, getWebtoonList: (selector: string) => JQuery<HTMLElement>) {
+  return (_e: Event) => {
     const webtoonList = getWebtoonList(listParent)
     webtoonList.sortable('destroy');
     webtoonList.find('div.overlay').remove();
   }
-  exit.on("click", removeOverlay);
+}
+
+function setupOverlaysEvents(comicSelector: string, listParent: string, offset: number, { exit, svg, send }: OverlayElements) {
+  const getWebtoonList = (selector: string) => jQuery(selector)
+  exit.on("click", removeOverlay(listParent, getWebtoonList));
   //  &#10004; tick signx
   //  &#10006; x
   svg.on('click', function (_e) {
-    jQuery(this).toggleClass('selected');
+    this.classList.toggle('selected');
     jQuery(this).siblings('input')[0].click();
   });
   send.on("click", async function (_e) {
     var items = getWebtoonList(comicSelector).filter(":has(input:checked)")
-      .map(function () {
-        return {
-          title: jQuery(this).find(".subj span").text(),
-          link: jQuery(this).find("a").attr("href"),
-        };
-      }).get();
+      .map((i, el) => ({
+        title: el.querySelector<HTMLSpanElement>(".subj span").innerText,
+        link: el.querySelector("a").href,
+      })).get();
     await browser.runtime.sendMessage({
       data: {
         todayComics: items,
         offset
       },
       requestType: "hasWebtoonDraggable"
-    }).then(removeOverlay);
+    }).then(removeOverlay(listParent, getWebtoonList));
   });
+}
+
+function setupOverlaySelectLabel(comicEl: HTMLElement) {
+  comicEl.classList.toggle('overlay-input-selected')
+  const label: HTMLInputElement = comicEl.querySelector('label.check')
+  label.click();
 }
 
 function setupOverlaysAutoSort(comicSelector: string, titleOrder: webtoons.StorageEntry[]) {
   const todayComics = jQuery(comicSelector)
-  let unsortedIndex = Math.min(
-    titleOrder.length,
-    todayComics.length
-  )
+  let unsortedIndex = Math.min(titleOrder.length, todayComics.length)
   const sortedComics = [...todayComics]
     .reduce((acc, comicEl) => {
       const comicLink = comicEl.querySelector('a').href
-      const i = titleOrder.findIndex((el) =>
-        el.link === comicLink
-      );
+      const i = titleOrder.findIndex((el) => el.link === comicLink);
       const forwardI = ~i ? i : unsortedIndex++
-      if (~i) {
-        comicEl.classList.toggle('overlay-input-selected')
-        const label: HTMLInputElement = comicEl.querySelector('label.check')
-        label.click();
-      }
+      ~i && setupOverlaySelectLabel(comicEl)
       // const reverseI = todayComics.length - forwardI
       acc[forwardI] = comicEl
       comicEl.remove()
