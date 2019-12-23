@@ -27,3 +27,5 @@ export function webtoonDateWithOffset(date: webtoons.DateF, offset = 0){
 export function webtoonDateFormatted(date: webtoons.DateF, offset = 0){
   return webtoonDateWithOffset(date, offset).format(dateFormat)
 }
+
+export function noOp() {}

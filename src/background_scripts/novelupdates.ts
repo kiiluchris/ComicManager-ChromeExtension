@@ -2,50 +2,40 @@ import axios from 'axios';
 import { browser, Runtime } from 'webextension-polyfill-ts'
 
 browser.runtime.onMessage.addListener(
-  async function (request, sender) {
+  function (request, sender) {
     const { windowId, url, index } = sender.tab
-    let res;
     switch (request.requestType) {
       case "novelUpdatesOpenPage":
-        res = novelUpdatesOpenPage(request.data, {
+        return novelUpdatesOpenPage(request.data, {
           tab: {
             windowId,
             url,
             index,
           }
         });
-        break;
       case "novelUpdatesOpenPageWayback":
-        res = novelUpdatesOpenPageWayback(request.data, {
+        return novelUpdatesOpenPageWayback(request.data, {
           tab: {
             windowId,
             url,
             index,
           }
         });
-        break;
       case "novelUpdatesOpenPageNext":
-        res = novelUpdatesOpenPageNext(request.data, sender);
-        break;
+        return novelUpdatesOpenPageNext(request.data, sender);
       case "novelUpdatesBGNext":
-        res = novelUpdatesBGNext({ ...request.data, current: sender.tab });
-        break;
+        return novelUpdatesBGNext({ ...request.data, current: sender.tab });
       case "novelUpdatesRemoveFromStore":
-        res = novelUpdatesRemoveFromStore({ ...request.data, current: sender.tab });
-        break;
+        return novelUpdatesRemoveFromStore({ ...request.data, current: sender.tab });
       case "replaceMonitorNovelUpdatesUrl":
-        res = replaceMonitorNovelUpdatesUrl({ ...request.data, current: sender.tab });
-        break;
+        return replaceMonitorNovelUpdatesUrl({ ...request.data, current: sender.tab });
       case "novelUpdatesOpenParent":
-        res = novelUpdatesOpenParent(request.data, sender);
-        break;
+        return novelUpdatesOpenParent(request.data, sender);
       case "novelUpdatesSaveUrl":
-        res = novelUpdatesSaveUrl(request.data, sender);
-        break;
+        return novelUpdatesSaveUrl(request.data, sender);
       default:
         return;
     }
-    return res
   }
 );
 

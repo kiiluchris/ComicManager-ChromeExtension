@@ -1,7 +1,7 @@
 'use strict';
 
 import 'jquery-ui/ui/widgets/sortable';
-import { webtoonDateFormatted } from '../shared';
+import { webtoonDateFormatted, noOp } from '../shared';
 import { webtoons } from '../../typings/webtoons';
 import { browser } from 'webextension-polyfill-ts'
 
@@ -154,7 +154,7 @@ async function openNextChapters({ numOfChapters }: webtoons.NextChapterData) {
     .map(function () {
       return jQuery(this).children("a").attr("href");
     }).get();
-  return browser.runtime.sendMessage({
+  await browser.runtime.sendMessage({
     requestType: "openWebtoonsReading",
     data: {
       urls: links,
@@ -171,7 +171,7 @@ function scrollWebtoon() {
   window.scroll(0, 0);
 }
 
-function getComicOffset() {
+async function getComicOffset() {
   const nStr = prompt('Give the comic offset')
   const n = +nStr
   const offset = isNaN(n) ? 0 : n
@@ -182,15 +182,14 @@ browser.runtime.onMessage.addListener(
   function (request, _sender) {
     if (!currentDateEl) return
     const currentDate = currentDateEl.innerText.split('\n')[1].trim();
-    let res = null;
     switch (request.requestType) {
       case "startPromptDraggable":
       case "startPromptDraggableYesterday":
-        setupOverlays(currentDate, request.data);
-        break;
+        return setupOverlays(currentDate, request.data)
+          .then(noOp);
       case "openNextChaptersWebtoons":
-        openNextChapters(request.data);
-        break;
+        return openNextChapters(request.data)
+          .then(noOp);
       case "fillWebtoonOverlayInputs":
         editOverlayInputs(true);
         break;
@@ -201,13 +200,9 @@ browser.runtime.onMessage.addListener(
         scrollWebtoon();
         break;
       case "getDateWebtoon":
-        res = currentDate;
-        break;
+        return Promise.resolve(currentDate);
       case "startPromptDraggableNOffset":
-        res = getComicOffset();
-        break
+        return getComicOffset();
     }
-
-    return Promise.resolve(res)
   }
 );

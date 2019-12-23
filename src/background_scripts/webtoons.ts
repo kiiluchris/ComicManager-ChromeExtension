@@ -94,17 +94,13 @@ async function setupUpdateListener(webtoonPages: webtoons.StorageEntryFromClient
 
 browser.runtime.onMessage.addListener(
   function (request, sender) {
-    let res: Promise<any>;
     switch (request.requestType) {
       case "openWebtoonsReading":
-        res = openWebtoonsReading(request.data);
-        break;
+        return openWebtoonsReading(request.data);
       case "hasWebtoonDraggable":
-        res = openWebtoonsDraggable(request.data, sender.tab);
-        break;
+        return openWebtoonsDraggable(request.data, sender.tab);
       default:
         return;
     }
-    return res
   }
 );
