@@ -66,33 +66,33 @@ const contextMenuData: Menus.CreateCreatePropertiesType[] = [
     documentUrlPatterns: [
       "*://*.webtoons.com/en/*/viewer*"
     ],
-    contexts: [ 'all' ]
+    contexts: ['all']
   }, {
     title: "Open Prompt(Overlay)",
     id: "startPromptDraggable",
     documentUrlPatterns: webtoonFavPattern,
-    contexts: [ 'all' ]
+    contexts: ['all']
   }, {
     title: "Open Prompt Yesterday(Overlay)",
     id: "startPromptDraggableYesterday",
     documentUrlPatterns: webtoonFavPattern,
-    contexts: [ 'all' ]
+    contexts: ['all']
   }, {
     title: "Open Prompt N Offset",
     id: "startPromptDraggableNOffset",
     documentUrlPatterns: webtoonFavPattern,
-    contexts: [ 'all' ]
+    contexts: ['all']
   }, {
     title: "Select all comics",
     id: "fillWebtoonOverlayInputs",
     documentUrlPatterns: webtoonFavPattern,
-    contexts: [ 'all' ]
+    contexts: ['all']
   },
   {
     title: "Unselect all comics",
     id: "clearWebtoonOverlayInputs",
     documentUrlPatterns: webtoonFavPattern,
-    contexts: [ 'all' ]
+    contexts: ['all']
   }, {
     title: "Open next chapter",
     id: "getTseirpNextChapter",
@@ -111,17 +111,22 @@ for (let i = 1; i < 4; i++) {
     documentUrlPatterns: [
       "*://*.webtoons.com/en/*/viewer*"
     ],
-    contexts: [ 'all' ]
+    contexts: ['all']
   });
 }
 
-
-// browser.runtime.onInstalled.addListener(function () {
-for (var i = 0; i < contextMenuData.length; i++) {
-  const item = contextMenuData[i];
-  browser.contextMenus.create(item);
+function initMenu() {
+  for (var i = 0; i < contextMenuData.length; i++) {
+    const item = contextMenuData[i];
+    browser.contextMenus.create(item);
+  }
 }
-// });
+
+navigator.userAgent.toLowerCase().includes("firefox")
+  ? initMenu()
+  : browser.runtime.onInstalled.addListener(function () {
+    initMenu()
+  });
 
 browser.contextMenus.onClicked.addListener(async function (info, tab) {
   const cb = <(t: Tabs.Tab, i: Menus.OnClickData, ...args: any) => Promise<any>>(callbacks[info.parentMenuItemId] || callbacks[info.menuItemId] || defaultCB)

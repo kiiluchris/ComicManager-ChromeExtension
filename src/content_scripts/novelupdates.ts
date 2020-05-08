@@ -26,11 +26,14 @@ function checkBoxMonitorEvent(element: HTMLAnchorElement, checkbox: HTMLInputEle
 }
 
 export function checkBoxMonitor() {
-  const checkboxes: NodeListOf<HTMLInputElement> = document.querySelectorAll("table#myTable td input");
-  const elements: NodeListOf<HTMLAnchorElement> = document.querySelectorAll("table#myTable td a.chp-release");
-  elements.forEach((element, i) => {
-    element.addEventListener("click", checkBoxMonitorEvent(element, checkboxes[i]));
-  })
+  document
+    .querySelectorAll<HTMLTableDataCellElement>("table#myTable tr td:nth-child(3)")
+    .forEach(el => {
+      const link = el.querySelector<HTMLAnchorElement>("a.chp-release:first-child")
+      const checkbox = el.querySelector<HTMLInputElement>("input")
+      if (!link || !checkbox) return
+      link.addEventListener("click", checkBoxMonitorEvent(link, checkbox));
+    })
 }
 
 function openNextPage() {
