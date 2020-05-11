@@ -1,4 +1,4 @@
-declare module novelupdates {
+declare namespace novelupdates {
   interface StorageEntry {
     url: string;
     time: number;
@@ -25,7 +25,7 @@ declare module novelupdates {
   type Req = MyRequest<ReqData>
   
   interface Novels {
-    [key: string]: StorageEntry[]
+    [key: string]: StorageEntry[];
   }
 
   interface PageOpenOpts {

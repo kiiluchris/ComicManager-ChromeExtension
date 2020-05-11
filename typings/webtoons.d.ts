@@ -1,6 +1,6 @@
 import { Moment } from "moment";
 
-declare module webtoons {
+declare namespace webtoons {
   interface StorageEntry {
     title: string;
     link: string;
@@ -17,6 +17,6 @@ declare module webtoons {
   type DateF = string | Date | Moment
 
   type StorageEntryFromClient = webtoons.StorageEntry & {
-    hasOpenedChapter: boolean,
+    hasOpenedChapter: boolean;
   }
 }

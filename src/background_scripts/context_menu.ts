@@ -1,6 +1,7 @@
 'use strict';
 import { getTitleOrder } from './webtoons';
 import { browser, Menus, Tabs } from 'webextension-polyfill-ts'
+import { range } from '../shared';
 
 function defaultCB(tab: Tabs.Tab, info: Menus.OnClickData, val: object = {}) {
   return browser.tabs.sendMessage(tab.id, { requestType: info.menuItemId, ...val });
@@ -42,21 +43,18 @@ const callbacks: context_menus.Callbacks = {
     }).catch(console.error);
   },
   openNextChaptersWebtoons(tab: Tabs.Tab, info: Menus.OnClickData) {
-    const menuId = <string>info.menuItemId
+    const menuId = info.menuItemId as string
     const numOfChapters = menuId.match(/\d+$/)
     return defaultCB(tab, info, {
       requestType: info.parentMenuItemId,
       data: {
-        numOfChapters: parseInt(numOfChapters[0])
+        numOfChapters: parseInt(numOfChapters[0], 10)
       }
     }).catch(console.error);
   }
 }
 const webtoonFavPattern = [
   "*://*.webtoons.com/en/favorite"
-];
-const kissmangaAllPattern = [
-  "*://kissmanga.com/*"
 ];
 
 const contextMenuData: Menus.CreateCreatePropertiesType[] = [
@@ -102,7 +100,7 @@ const contextMenuData: Menus.CreateCreatePropertiesType[] = [
   }
 ];
 
-for (let i = 1; i < 4; i++) {
+for (const i of range(1, 4)) {
   const num = i * 5;
   contextMenuData.push({
     title: `${num} chapters`,
@@ -116,8 +114,7 @@ for (let i = 1; i < 4; i++) {
 }
 
 function initMenu() {
-  for (var i = 0; i < contextMenuData.length; i++) {
-    const item = contextMenuData[i];
+  for (const item of contextMenuData) {
     browser.contextMenus.create(item);
   }
 }
@@ -128,8 +125,8 @@ navigator.userAgent.toLowerCase().includes("firefox")
     initMenu()
   });
 
-browser.contextMenus.onClicked.addListener(async function (info, tab) {
-  const cb = <(t: Tabs.Tab, i: Menus.OnClickData, ...args: any) => Promise<any>>(callbacks[info.parentMenuItemId] || callbacks[info.menuItemId] || defaultCB)
-  return await cb(tab, info);
+browser.contextMenus.onClicked.addListener(function (info, tab) {
+  const cb = (callbacks[info.parentMenuItemId] || callbacks[info.menuItemId] || defaultCB) as (t: Tabs.Tab, i: Menus.OnClickData, ...args: any) => Promise<any>
+  cb(tab, info).catch(console.error);
 });
 

@@ -8,7 +8,8 @@
     "watch": "webpack -w",
     "ext:pkg": "web-ext build -o",
     "ext:sign": "./scripts/web-ext-cmd.sh sign",
-    "ext:run": "./scripts/web-ext-cmd.sh run"
+    "ext:run": "./scripts/web-ext-cmd.sh run",
+    "lint": "npx eslint -c .eslintrc.js --ext .ts  src"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,8 @@
   "devDependencies": {
     "@types/lodash": "^4.14.150",
     "@types/moment-timezone": "^0.5.13",
+    "@typescript-eslint/eslint-plugin": "^2.31.0",
+    "@typescript-eslint/parser": "^2.31.0",
     "awesome-typescript-loader": "^5.2.1",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
@@ -26,6 +29,7 @@
     "chokidar": "^3.4.0",
     "css-loader": "^3.5.3",
     "dotenv": "^4.0.0",
+    "eslint": "^7.0.0",
     "extension-kitchen-sink": "git+https://github.com/kiiluchris/extension-kitchen-sink.git",
     "html-webpack-plugin": "^3.2.0",
     "raw-loader": "^0.5.1",

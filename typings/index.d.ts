@@ -16,7 +16,7 @@ interface UserScriptReq {
 
 
 interface UserScriptHandlerObj {
-  [key: string]: [any, () => void]
+  [key: string]: [any, () => void];
 }
 
 type Fn1<T> = (x: T) => T

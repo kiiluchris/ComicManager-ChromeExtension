@@ -1,5 +1,5 @@
-declare module context_menus {
+declare namespace context_menus {
   interface Callbacks {
-    [key: string]: (...args: any) => void
+    [key: string]: (...args: any) => void;
   }
 }

@@ -33,7 +33,7 @@ export async function openPages(urls: string[], tabId?: number, windowId?: numbe
     return browser.tabs.create({
       windowId,
       active: false,
-      url: url
+      url
     });
   });
   await Promise.all(tabs)

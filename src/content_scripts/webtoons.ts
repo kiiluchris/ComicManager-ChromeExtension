@@ -9,10 +9,10 @@ import { browser } from 'webextension-polyfill-ts'
 const currentDateEl: HTMLSpanElement | null = document.querySelector('ul#_webtoonList span.update');
 
 interface OverlayElements {
-  exit: JQuery<HTMLSpanElement>,
-  send: JQuery<HTMLSpanElement>,
-  svg: JQuery<HTMLLabelElement>,
-  div: JQuery<HTMLDivElement>,
+  exit: JQuery<HTMLSpanElement>;
+  send: JQuery<HTMLSpanElement>;
+  svg: JQuery<HTMLLabelElement>;
+  div: JQuery<HTMLDivElement>;
 }
 
 
@@ -65,19 +65,22 @@ function setupOverlaysEvents(comicSelector: string, listParent: string, offset: 
     this.classList.toggle('selected');
     jQuery(this).siblings('input')[0].click();
   });
-  send.on("click", async function (_e) {
-    var items = getWebtoonList(comicSelector).filter(":has(input:checked)")
+  send.on("click", function (_e) {
+    const items = getWebtoonList(comicSelector).filter(":has(input:checked)")
       .map((i, el) => ({
         title: el.querySelector<HTMLSpanElement>(".subj span").innerText,
         link: el.querySelector("a").href,
       })).get();
-    await browser.runtime.sendMessage({
-      data: {
-        todayComics: items,
-        offset
-      },
-      requestType: "hasWebtoonDraggable"
-    }).then(removeOverlay(listParent, getWebtoonList));
+    browser.runtime
+      .sendMessage({
+        data: {
+          todayComics: items,
+          offset
+        },
+        requestType: "hasWebtoonDraggable"
+      })
+      .then(removeOverlay(listParent, getWebtoonList))
+      .catch(console.error);
   });
 }
 
@@ -150,7 +153,7 @@ function editOverlayInputs(selectAll: boolean) {
 }
 
 async function openNextChapters({ numOfChapters }: webtoons.NextChapterData) {
-  var links = jQuery("div#topEpisodeList .episode_cont ul li:has(a.on)").nextAll()
+  const links = jQuery("div#topEpisodeList .episode_cont ul li:has(a.on)").nextAll()
     .map(function () {
       return jQuery(this).children("a").attr("href");
     }).get();
@@ -171,7 +174,7 @@ function scrollWebtoon() {
   window.scroll(0, 0);
 }
 
-async function getComicOffset() {
+function getComicOffset() {
   const nStr = prompt('Give the comic offset')
   const n = +nStr
   const offset = isNaN(n) ? 0 : n
@@ -202,7 +205,7 @@ browser.runtime.onMessage.addListener(
       case "getDateWebtoon":
         return Promise.resolve(currentDate);
       case "startPromptDraggableNOffset":
-        return getComicOffset();
+        return Promise.resolve(getComicOffset());
     }
   }
 );

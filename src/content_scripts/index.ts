@@ -4,9 +4,11 @@ import './webtoons';
 import { checkBoxMonitor } from './novelupdates'
 import { browser } from 'webextension-polyfill-ts'
 
-window.addEventListener('keyup', async function (e) {
+window.addEventListener('keyup', function (e) {
   if (e.key === "E" && e.ctrlKey && e.shiftKey && window.location.href !== "chrome://extensions") {
-    await browser.runtime.sendMessage({ requestType: "extensionTab" });
+    browser.runtime
+      .sendMessage({ requestType: "extensionTab" })
+      .catch(console.error);
   }
 });
 
