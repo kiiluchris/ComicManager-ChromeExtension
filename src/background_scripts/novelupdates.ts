@@ -193,7 +193,7 @@ function novelUpdatesRemoveFromStore(options: {
 }
 
 async function saveCurrentNovelTab(parent: novelupdates.UrlObj, current: novelupdates.UrlObj, wayback: boolean) {
-  const data = await browser.storage.sync.get("novels")
+  const data = await browser.storage.local.get("novels")
   let novels = data.novels || {};
   let key = parent.url.match(/.*\//)[0] + "*";
   let val = {
@@ -207,11 +207,11 @@ async function saveCurrentNovelTab(parent: novelupdates.UrlObj, current: novelup
   } else {
     novels[key] = [val];
   }
-  return await browser.storage.sync.set({ novels: novels });
+  return await browser.storage.local.set({ novels: novels });
 }
 
 async function deleteCurrentNovelTab(parent: novelupdates.UrlObj, current: novelupdates.UrlObj) {
-  const data = await browser.storage.sync.get("novels")
+  const data = await browser.storage.local.get("novels")
   let novels: novelupdates.Novels = data.novels || {};
   let key = parent.url.match(/.*\//)[0] + "*";
   if (novels[key]) {
@@ -220,11 +220,11 @@ async function deleteCurrentNovelTab(parent: novelupdates.UrlObj, current: novel
       delete novels[key];
     }
   }
-  return await browser.storage.sync.set({ novels: novels });
+  return await browser.storage.local.set({ novels: novels });
 }
 
 function getNovels(): Promise<novelupdates.Novels> {
-  return browser.storage.sync.get("novels")
+  return browser.storage.local.get("novels")
     .then(({ novels = {} } = {}) => {
       return novels;
     })
@@ -265,7 +265,7 @@ browser.tabs.onUpdated.addListener(
       return;
     }
     const cleanedNovels = cleanNovels(novels);
-    await browser.storage.sync.set({ novels: cleanedNovels });
+    await browser.storage.local.set({ novels: cleanedNovels });
     const tabs = await browser.tabs.query({ url: 'https://www.novelupdates.com/series/*' })
     for (const key in cleanedNovels) {
       const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url));
@@ -304,7 +304,7 @@ browser.runtime.onInstalled.addListener(
     }
 
 
-    const { novels } = <{ novels: novelupdates.Novels }>await browser.storage.sync.get("novels")
+    const { novels } = <{ novels: novelupdates.Novels }>await browser.storage.local.get("novels")
     const allTabs = await browser.tabs.query({})
     Object.values(novels).forEach(novel => {
       allTabs.forEach(tab => {
