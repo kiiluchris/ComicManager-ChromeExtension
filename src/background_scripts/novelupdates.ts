@@ -269,6 +269,7 @@ browser.tabs.onUpdated.addListener(
       const cleanedNovels = cleanNovels(novels);
       await browser.storage.local.set({ novels: cleanedNovels });
       const tabs = await browser.tabs.query({ url: 'https://www.novelupdates.com/series/*' })
+      // eslint-disable-next-line guard-for-in
       for (const key in cleanedNovels) {
         const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url));
         if (novel) {
@@ -306,7 +307,8 @@ browser.runtime.onInstalled.addListener(
       for (const tab of tabs) {
         await browser.tabs.reload(tab.id)
       }
-      const { novels } = await browser.storage.local.get("novels") as { novels: novelupdates.Novels }
+      const { novels } = await browser.storage.local.get("novels") as { novels?: novelupdates.Novels | undefined }
+      if (!novels) return
       const allTabs = await browser.tabs.query({})
       Object.values(novels).forEach(novel => {
         allTabs.forEach(tab => {

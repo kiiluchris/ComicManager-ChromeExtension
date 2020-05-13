@@ -4,8 +4,12 @@ const path = require('path');
 const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
 const UglifyJSWebpackPlugin = require('uglifyjs-webpack-plugin');
-const { optionsUITemplatePath } = require('extension-kitchen-sink/import-export-storage');
-const { CheckerPlugin } = require('awesome-typescript-loader')
+const {
+  optionsUITemplatePath
+} = require('extension-kitchen-sink/import-export-storage');
+const {
+  CheckerPlugin
+} = require('awesome-typescript-loader')
 require('dotenv').config();
 
 const config = {
@@ -27,13 +31,12 @@ const config = {
   },
   devtool: 'inline-source-map',
   output: {
-    path: path.join(__dirname, "dist"),
+    path: path.join(__dirname, "extension"),
     filename: '[name].js',
     publicPath: '/'
   },
   module: {
-    rules: [
-      {
+    rules: [{
         test: /\.css$/,
         loaders: ['style-loader', 'css-loader']
       },
