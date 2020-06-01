@@ -5,12 +5,12 @@ declare namespace webtoons {
     title: string;
     link: string;
   }
-  
+
   interface OverlayData {
     titleOrder: StorageEntry[];
     offset: number;
   }
-  
+
   interface NextChapterData {
     numOfChapters: number;
   }

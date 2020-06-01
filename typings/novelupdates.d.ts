@@ -23,7 +23,7 @@ declare namespace novelupdates {
 
   type ReqData = StorageEntry & HalfReqData
   type Req = MyRequest<ReqData>
-  
+
   interface Novels {
     [key: string]: StorageEntry[];
   }

@@ -68,8 +68,8 @@ function setupOverlaysEvents(comicSelector: string, listParent: string, offset: 
   send.on("click", function (_e) {
     const items = getWebtoonList(comicSelector).filter(":has(input:checked)")
       .map((i, el) => ({
-        title: el.querySelector<HTMLSpanElement>(".subj span").innerText,
-        link: el.querySelector("a").href,
+        title: el.querySelector<HTMLSpanElement>(".subj span")!!.innerText,
+        link: el.querySelector("a")!!.href,
       })).get();
     browser.runtime
       .sendMessage({
@@ -86,8 +86,8 @@ function setupOverlaysEvents(comicSelector: string, listParent: string, offset: 
 
 function setupOverlaySelectLabel(comicEl: HTMLElement) {
   comicEl.classList.toggle('overlay-input-selected')
-  const label: HTMLInputElement = comicEl.querySelector('label.check')
-  label.click();
+  const label = comicEl.querySelector<HTMLElement>('label.check')
+  label?.click();
 }
 
 function setupOverlaysAutoSort(comicSelector: string, titleOrder: webtoons.StorageEntry[]) {
@@ -95,7 +95,7 @@ function setupOverlaysAutoSort(comicSelector: string, titleOrder: webtoons.Stora
   let unsortedIndex = Math.min(titleOrder.length, todayComics.length)
   const sortedComics = [...todayComics]
     .reduce((acc, comicEl) => {
-      const comicLink = comicEl.querySelector('a').href
+      const comicLink = comicEl.querySelector('a')!!.href
       const i = titleOrder.findIndex((el) => el.link === comicLink);
       const forwardI = ~i ? i : unsortedIndex++
       ~i && setupOverlaySelectLabel(comicEl)
@@ -106,7 +106,7 @@ function setupOverlaysAutoSort(comicSelector: string, titleOrder: webtoons.Stora
     }, new Array(todayComics.length))
 
   const listContainer = document.querySelector("ul#_webtoonList")
-  listContainer.prepend(...sortedComics.filter(c => c))
+  listContainer?.prepend(...sortedComics.filter(c => c))
 }
 
 async function setupOverlays(currentDate: string, { titleOrder, offset = 0 }: webtoons.OverlayData) {
@@ -167,16 +167,16 @@ async function openNextChapters({ numOfChapters }: webtoons.NextChapterData) {
 }
 
 function scrollWebtoon() {
-  jQuery('.viewer_lst .viewer_img img')
-    .each(function (_i, el: HTMLImageElement) {
-      el.src = jQuery(el).data('url');
+  document.querySelectorAll<HTMLImageElement>('.viewer_lst .viewer_img img')
+    .forEach((el) => {
+      el.src = el.dataset.url!!;
     });
   window.scroll(0, 0);
 }
 
 function getComicOffset() {
   const nStr = prompt('Give the comic offset')
-  const n = +nStr
+  const n = parseInt(nStr || '', 10)
   const offset = isNaN(n) ? 0 : n
   return offset
 }

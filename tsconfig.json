@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "./dist/",
+    "outDir": "./extension/",
     "noImplicitAny": true,
     "moduleResolution": "node",
     "module": "es6",
@@ -23,7 +23,8 @@
       "lodash",
       "moment",
       "moment-timezone",
-    ]
+    ],
+    "strict": true,
   },
   "include": [
     "src/**/*",

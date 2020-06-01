@@ -79,8 +79,8 @@ module.exports = {
       }
     ],
     "@typescript-eslint/unified-signatures": "error",
-    "camelcase": "warn",
-    "@typescript-eslint/camelcase": "warn",
+    "camelcase": "off",
+    "@typescript-eslint/camelcase": "off",
     "complexity": "off",
     "constructor-super": "error",
     "eqeqeq": [

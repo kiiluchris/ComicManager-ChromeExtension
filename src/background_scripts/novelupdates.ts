@@ -1,54 +1,55 @@
 import axios from 'axios';
 import { browser, Runtime } from 'webextension-polyfill-ts'
 
-browser.runtime.onMessage.addListener(
-  function (request, sender) {
-    const { windowId, url, index } = sender.tab
-    switch (request.requestType) {
-      case "novelUpdatesOpenPage":
-        return novelUpdatesOpenPage(request.data, {
-          tab: {
-            windowId,
-            url,
-            index,
-          }
-        });
-      case "novelUpdatesOpenPageWayback":
-        return novelUpdatesOpenPageWayback(request.data, {
-          tab: {
-            windowId,
-            url,
-            index,
-          }
-        });
-      case "novelUpdatesOpenPageNext":
-        return novelUpdatesOpenPageNext(request.data, sender);
-      case "novelUpdatesBGNext":
-        return novelUpdatesBGNext({ ...request.data, current: sender.tab });
-      case "novelUpdatesRemoveFromStore":
-        return novelUpdatesRemoveFromStore({ ...request.data, current: sender.tab });
-      case "replaceMonitorNovelUpdatesUrl":
-        return replaceMonitorNovelUpdatesUrl({ ...request.data, current: sender.tab });
-      case "novelUpdatesOpenParent":
-        return novelUpdatesOpenParent(request.data, sender);
-      case "novelUpdatesSaveUrl":
-        return novelUpdatesSaveUrl(request.data, sender);
-      default:
-        return;
-    }
+browser.runtime.onMessage.addListener( (request, sender) => {
+  if(!sender.tab) return;
+  const { windowId, url, index } = sender.tab as {
+    windowId: number; url: string; index: number;
   }
-);
+  switch (request.requestType) {
+    case "novelUpdatesOpenPage":
+    return novelUpdatesOpenPage(request.data, {
+      tab: {
+        windowId,
+        url,
+        index,
+      }
+    });
+    case "novelUpdatesOpenPageWayback":
+    return novelUpdatesOpenPageWayback(request.data, {
+      tab: {
+        windowId,
+        url,
+        index,
+      }
+    });
+    case "novelUpdatesOpenPageNext":
+    return novelUpdatesOpenPageNext(request.data, sender);
+    case "novelUpdatesBGNext":
+    return novelUpdatesBGNext({ ...request.data, current: sender.tab });
+    case "novelUpdatesRemoveFromStore":
+    return novelUpdatesRemoveFromStore({ ...request.data, current: sender.tab });
+    case "replaceMonitorNovelUpdatesUrl":
+    return replaceMonitorNovelUpdatesUrl({ ...request.data, current: sender.tab });
+    case "novelUpdatesOpenParent":
+    return novelUpdatesOpenParent(request.data, sender);
+    case "novelUpdatesSaveUrl":
+    return novelUpdatesSaveUrl(request.data, sender);
+    default:
+    return;
+  }
+});
 
 function getTabIndex(selectFunc: FnN<number>, clampFunc: Fn1<number>) {
   return async (tab: { url: string; index: number }, offset = 1) => {
     let index = tab.index + offset;
     const novels = await getNovels();
-    const parentURL = tab.url.match(/.*\//)[0] + "*";
+    const parentURL = tab.url.match(/.*\//)!![0] + "*";
     if (novels.hasOwnProperty(parentURL)) {
       const tabs = await browser.tabs.query({})
       const urls = novels[parentURL].map(({ url }) => url);
       for (const tab of tabs) {
-        if (urls.includes(tab.url)) {
+        if (tab.url && urls.includes(tab.url)) {
           index = selectFunc(index, tab.index + offset);
         }
       }
@@ -61,7 +62,8 @@ function getTabIndex(selectFunc: FnN<number>, clampFunc: Fn1<number>) {
 
 const getMaxTabIndex = getTabIndex(Math.max, x => x);
 const getMinTabIndex = getTabIndex(Math.min, Math.max.bind(null, 0));
-const novelUrlMatch = (ch: string, tab: string) => new RegExp(ch.replace(/\?/g, "\\?") + '/?$').test(tab);
+const novelUrlMatch = (ch: string, tab: string) =>
+new RegExp(ch.replace(/\?/g, "\\?") + '/?$').test(tab);
 
 async function novelUpdatesSaveUrl({ url, parent, wayback }: {
   url: string; parent: novelupdates.Parent; wayback: boolean;
@@ -76,7 +78,7 @@ async function novelUpdatesOpenParent({ page }: { page: string }, sender: Runtim
   }, 0);
   return await browser.tabs.create({
     url: page,
-    windowId: sender.tab.windowId,
+    windowId: sender.tab?.windowId,
     active: false,
     index
   });
@@ -101,12 +103,14 @@ async function novelUpdatesOpenPageNext(options: novelupdates.PageOpenOpts & {
   };
 }, sender: Runtime.MessageSender) {
   const openFunc = options.wayback ? novelUpdatesOpenPageWayback : novelUpdatesOpenPage;
-  return openFunc(options, {
-    tab: {
-      windowId: sender.tab.windowId,
-      ...options.parent
-    },
-  });
+  return sender.tab?.windowId
+    ? openFunc(options, {
+        tab: {
+          windowId: sender.tab.windowId,
+          ...options.parent
+        },
+      })
+    : Promise.resolve();
 }
 
 async function novelUpdatesOpenPage(options: novelupdates.PageOpenOpts, sender: {
@@ -141,28 +145,22 @@ async function novelUpdatesOpenPageWayback(options: novelupdates.PageOpenOpts, s
   const actualUrl = await fetch(options.url, {
     method: 'HEAD'
   }).then(res => res.url)
-  return axios.get(`http://archive.org/wayback/available?url=${actualUrl}`).then(({ data }: {
-    data: {
-      archived_snapshots: {
-        closest: {
-          url: string;
-        };
-      };
-    };
-  }) => {
-    const closestUrl: string | undefined = ['archived_snapshots', 'closest', 'url']
+  return axios
+    .get(`http://archive.org/wayback/available?url=${actualUrl}`)
+    .then(({ data }: WaybackResponse) => {
+      const closestUrl: string | undefined = ['archived_snapshots', 'closest', 'url']
       .reduce((acc: any, key: string) => acc && acc[key], data);
-    if (closestUrl) {
-      return novelUpdatesOpenPage({ ...options, url: closestUrl }, sender);
-    } else {
-      throw new Error('Url not available on wayback machine');
-    }
-  }).catch((e: Error & { response: { data: object } }) => {
-    console.error(e);
-    if (e.response) {
-      console.error(e.response.data);
-    }
-  });
+      if (closestUrl) {
+        return novelUpdatesOpenPage({ ...options, url: closestUrl }, sender);
+      } else {
+        throw new Error('Url not available on wayback machine');
+      }
+    }, (e: Error & { response: { data: object } }) => {
+      console.error(e);
+      if (e.response) {
+        console.error(e.response.data);
+      }
+    });
 }
 
 function novelUpdatesBGNext(options: {
@@ -172,30 +170,35 @@ function novelUpdatesBGNext(options: {
   tabId: number;
   save: boolean;
 }) {
-  return browser.tabs.sendMessage(options.parent.id, {
-    requestType: "novelUpdatesUINext",
-    data: {
-      wayback: options.wayback,
-      tabId: options.tabId,
-      save: options.save
-    }
-  }).then(() => {
-    return novelUpdatesRemoveFromStore(options);
-  });
+  return options.parent.id
+    ? browser.tabs.sendMessage(options.parent.id, {
+      requestType: "novelUpdatesUINext",
+      data: {
+        wayback: options.wayback,
+        tabId: options.tabId,
+        save: options.save
+      }
+    }).then(() => {
+      return novelUpdatesRemoveFromStore(options);
+    })
+  : Promise.resolve();
 }
 
 function novelUpdatesRemoveFromStore(options: {
   current: novelupdates.Parent;
   parent: novelupdates.Parent;
 }) {
-  return browser.tabs.remove(options.current.id)
-    .then(_ => deleteCurrentNovelTab(options.parent, options.current))
+  return options.current.id
+    ? browser.tabs
+      .remove(options.current.id)
+      .then(() => deleteCurrentNovelTab(options.parent, options.current))
+    : Promise.resolve()
 }
 
 async function saveCurrentNovelTab(parent: novelupdates.UrlObj, current: novelupdates.UrlObj, wayback: boolean) {
   const data = await browser.storage.local.get("novels")
   const novels = data.novels || {};
-  const key = parent.url.match(/.*\//)[0] + "*";
+  const key = parent.url.match(/.*\//)!![0] + "*";
   const val = {
     url: current.url,
     time: Date.now(),
@@ -213,7 +216,7 @@ async function saveCurrentNovelTab(parent: novelupdates.UrlObj, current: novelup
 async function deleteCurrentNovelTab(parent: novelupdates.UrlObj, current: novelupdates.UrlObj) {
   const data = await browser.storage.local.get("novels")
   const novels: novelupdates.Novels = data.novels || {};
-  const key = parent.url.match(/.*\//)[0] + "*";
+  const key = parent.url.match(/.*\//)!![0] + "*";
   if (novels[key]) {
     novels[key] = novels[key].filter(n => !novelUrlMatch(n.url, current.url));
     if (novels[key].length === 0) {
@@ -225,14 +228,14 @@ async function deleteCurrentNovelTab(parent: novelupdates.UrlObj, current: novel
 
 function getNovels(): Promise<novelupdates.Novels> {
   return browser.storage.local.get("novels")
-    .then(({ novels = {} } = {}) => {
-      return novels;
-    })
+  .then(({ novels = {} } = {}) => {
+    return novels;
+  })
 }
 
 function filterOutWeekOldNovels(novels: novelupdates.StorageEntry[] = [], data: novelupdates.StorageEntry[] = []): novelupdates.StorageEntry[] {
   if (novels.length === 0) return data;
-  const novel = novels.shift();
+  const novel = novels.shift()!!;
   if (Date.now() - novel.time < 259200000) {
     // 3 days not passed since item was added to the monitor
     data.push(novel);
@@ -247,7 +250,7 @@ function cleanNovels(novels: novelupdates.Novels = {}, data: novelupdates.Novels
   const key = novelKeys[0];
   if (novels.hasOwnProperty(key)) {
     const novelChapters = filterOutWeekOldNovels(novels[key])
-      .filter(n => n.url);
+    .filter(n => n.url);
     delete novels[key];
     if (novelChapters.length !== 0) {
       data[key] = novelChapters;
@@ -257,65 +260,60 @@ function cleanNovels(novels: novelupdates.Novels = {}, data: novelupdates.Novels
   return cleanNovels(novels, data);
 }
 
-browser.tabs.onUpdated.addListener(
-  function check(tabId, { status }, tab) {
-    if (!status) return
-    (async () => {
-
-      const novels = await getNovels();
-      if (Object.keys(novels).length === 0) {
+browser.tabs.onUpdated.addListener((tabId, { status }, tab) => {
+  if (!status) return;
+  getNovels().then(async (novels) => {
+    if (Object.keys(novels).length === 0) {
+      return;
+    }
+    const cleanedNovels = cleanNovels(novels);
+    await browser.storage.local.set({ novels: cleanedNovels });
+    const tabs = await browser.tabs.query({ url: 'https://www.novelupdates.com/series/*' })
+    // eslint-disable-next-line guard-for-in
+    for (const key in cleanedNovels) {
+      const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url || ''));
+      if (novel) {
+        const parent = tabs.find(t => new RegExp(key.replace('*', '.*')).test(t.url || ''));
+        const { name } = browser.runtime.getManifest();
+        if (status === "complete") {
+          await browser.tabs.sendMessage(tabId, {
+            requestType: "monitorNovelUpdates",
+            data: {
+              parent: parent || { url: novel.page },
+              tabId: tab.id,
+              ...novel
+            },
+            extensionName: name
+          });
+        } else if (status === "loading") {
+          await browser.tabs.executeScript(tab.id, {
+            code: `window.postMessage({
+              extension: "${name}",
+              status: "loading" 
+            }, window.location.href);`
+          });
+        }
         return;
       }
-      const cleanedNovels = cleanNovels(novels);
-      await browser.storage.local.set({ novels: cleanedNovels });
-      const tabs = await browser.tabs.query({ url: 'https://www.novelupdates.com/series/*' })
-      // eslint-disable-next-line guard-for-in
-      for (const key in cleanedNovels) {
-        const novel = cleanedNovels[key].find(ch => novelUrlMatch(ch.url, tab.url));
-        if (novel) {
-          const parent = tabs.find(t => new RegExp(key.replace('*', '.*')).test(t.url));
-          const { name } = browser.runtime.getManifest();
-          if (status === "complete") {
-            await browser.tabs.sendMessage(tab.id, {
-              requestType: "monitorNovelUpdates",
-              data: {
-                parent: parent || { url: novel.page },
-                tabId: tab.id,
-                ...novel
-              },
-              extensionName: name
-            });
-          } else if (status === "loading") {
-            await browser.tabs.executeScript(tab.id, {
-              code: `window.postMessage({
-                extension: "${name}",
-                status: "loading" 
-              }, window.location.href);`
-            });
-          }
-          return;
-        }
-      }
-    })().catch(console.error)
-  }
-);
+    }
+  }).catch(console.error);
+});
 
-browser.runtime.onInstalled.addListener(
-  function (_details) {
-    (async () => {
-      const tabs = await browser.tabs.query({ url: 'https://www.novelupdates.com/series/*' })
-      for (const tab of tabs) {
-        await browser.tabs.reload(tab.id)
-      }
-      const { novels } = await browser.storage.local.get("novels") as { novels?: novelupdates.Novels | undefined }
-      if (!novels) return
-      const allTabs = await browser.tabs.query({})
+function tabUrlMatchesSavedPage(novelUrl: string,nuUrl: string,tabUrl: string): boolean {
+  return novelUrlMatch(novelUrl, tabUrl) || novelUrlMatch(nuUrl, tabUrl);
+}
+
+browser.runtime.onInstalled.addListener((_details) => {
+  browser.storage.local.get("novels")
+  .then(async ({novels}: { novels?: novelupdates.Novels }) => {
+    if (!novels) return
+    const tabs = await browser.tabs.query({ })
+    tabs.forEach(tab => {
       Object.values(novels).forEach(novel => {
-        allTabs.forEach(tab => {
-          if (novel.find(({ url }) => novelUrlMatch(url, tab.url))) {
-            browser.tabs.reload(tab.id).catch(console.error);
-          }
-        })
-      })
-    })().catch(console.error)
-  })
+        if (novel.find(({url, page}) => tabUrlMatchesSavedPage(url, page, tab.url || ''))) {
+          browser.tabs.reload(tab.id).catch(console.error);
+        }
+      });
+    });
+  }).catch(console.error);
+});

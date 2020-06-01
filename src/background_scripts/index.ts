@@ -7,6 +7,7 @@ import { browser } from 'webextension-polyfill-ts'
 
 browser.runtime.onMessage.addListener(
   function (request, sender) {
+    if(!sender.tab) return;
     let res;
     switch (request.requestType) {
       case "openPages":

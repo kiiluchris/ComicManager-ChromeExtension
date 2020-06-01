@@ -15,9 +15,11 @@ function getDate(tabId: number): Promise<string> {
 
 export async function getTitleOrder(tabId: number, { offset = 0 } = {}) {
   const date = await getDate(tabId);
-  const data = await browser.storage.sync.get('webtoonOrder')
+  const data = await browser.storage.sync.get('webtoonOrder') as {
+    webtoonOrder?: webtoons.StorageEntry[];
+  }
   const order = data.webtoonOrder;
-  return order && order[getWebtoonDay(date, offset)] || [];
+  return order ? order[getWebtoonDay(date, offset)] : [];
 }
 
 async function saveTitleOrder(tabId: number, { order = [], offset = 0 }: {
@@ -47,9 +49,10 @@ async function openWebtoonsDraggable({ todayComics, offset }: {
   todayComics: webtoons.StorageEntryFromClient[];
   offset: number;
 }, { windowId, id }: Tabs.Tab) {
-  await saveTitleOrder(id, { order: todayComics, offset });
-  browser.tabs.onUpdated.addListener(
-    await setupUpdateListener(todayComics, windowId)
+  id && await saveTitleOrder(id, { order: todayComics, offset });
+  const listener = await setupUpdateListener(todayComics, windowId)
+  listener && browser.tabs.onUpdated.addListener(
+    listener
   );
 }
 
@@ -61,34 +64,35 @@ async function setupUpdateListener(webtoonPages: webtoons.StorageEntryFromClient
     windowId
   })
   const { id } = tab
-  const updateListener = (tabId: number, { status }: { status: string }, _tab: Tabs.Tab) => {
-    (async () => {
-      try {
-        if (status !== "loading" || id !== tabId) return;
-        if (!webtoonPages[0].hasOpenedChapter) {
-          await browser.tabs.executeScript(tabId, { code: 'document.querySelector(".detail_body .detail_lst a").click();' });
-          webtoonPages[0].hasOpenedChapter = true;
-        } else {
-          await browser.tabs.executeScript(tabId, {
-            code: `;(${(() => {
-              const images: NodeListOf<HTMLImageElement> = document.querySelectorAll('.viewer_lst .viewer_img img');
-              images.forEach(img => {
-                img.src = img.dataset.url;
-              });
-              window.scroll(0, 0);
-            }).toString()})();
-          `
+  const updateListener = (tabId: number, { status }: Tabs.OnUpdatedChangeInfoType, _tab: Tabs.Tab) => {
+    if (status !== "loading" || id !== tabId || webtoonPages.length < 1) return;
+    let promise: Promise<any> = Promise.resolve()
+    if (!webtoonPages[0].hasOpenedChapter) {
+      promise = browser.tabs.executeScript(tabId, {
+        code: 'document.querySelector(".detail_body .detail_lst a").click();'
+      }).then(() => {
+        webtoonPages[0].hasOpenedChapter = true;
+      });
+    } else {
+      promise = browser.tabs.executeScript(tabId, {
+        code: `;(${(() => {
+          const images: NodeListOf<HTMLImageElement> = document.querySelectorAll('.viewer_lst .viewer_img img');
+          images.forEach(img => {
+            img.src = img.dataset.url!!;
           });
-          webtoonPages.shift();
-          browser.tabs.onUpdated.removeListener(updateListener);
-          browser.tabs.onUpdated.addListener(
-            await setupUpdateListener(webtoonPages, windowId)
-          );
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    })().catch(console.error)
+          window.scroll(0, 0);
+        }).toString()})();
+          `
+      }).then(async () => {
+        webtoonPages.shift();
+        browser.tabs.onUpdated.removeListener(updateListener);
+        const listener = await setupUpdateListener(webtoonPages, windowId)
+        listener && browser.tabs.onUpdated.addListener(
+          listener
+        );
+      })
+    }
+    promise.catch(console.error);
   };
 
   return updateListener;
@@ -100,7 +104,7 @@ browser.runtime.onMessage.addListener(
       case "openWebtoonsReading":
         return openWebtoonsReading(request.data);
       case "hasWebtoonDraggable":
-        return openWebtoonsDraggable(request.data, sender.tab);
+        return sender.tab && openWebtoonsDraggable(request.data, sender.tab);
       default:
         return;
     }

@@ -9,31 +9,51 @@ function openNextPage() {
   }
 }
 
+
 function monitorNovelUpdatesControls(options: novelupdates.ReqData) {
   let finishedMonitoring = false;
-  window.addEventListener("keyup", function (e) {
-    (async () => {
-      if (!e.ctrlKey || finishedMonitoring) return
-      if (e.key === "ArrowUp") {
-        await browser.runtime.sendMessage({
-          requestType: "novelUpdatesOpenParent",
-          data: options
-        });
-        return
-      }
-      finishedMonitoring = true
-      if (e.key === "ArrowRight") {
-        await browser.runtime.sendMessage({
-          requestType: options.parent.id ? "novelUpdatesBGNext" : "novelUpdatesRemoveFromStore",
-          data: options
-        });
-      } else if (e.key === "ArrowLeft") {
-        await browser.runtime.sendMessage({
+  enum MonitorKeysEnum {
+    ArrowUp = 'ArrowUp',
+    ArrowRight = 'ArrowRight',
+    ArrowLeft = 'ArrowLeft'
+  };
+  type MonitorKeys = keyof typeof MonitorKeysEnum
+  type MonitorKeyActions = {
+    [key in MonitorKeys]: () => {
+      requestType: string;
+      data: any;
+    }
+  };
+  const monitorKeyVals = [MonitorKeysEnum.ArrowLeft, MonitorKeysEnum.ArrowRight, MonitorKeysEnum.ArrowUp]
+  const isMonitorKey = (key: string): boolean =>
+    monitorKeyVals.includes(key as MonitorKeysEnum);
+
+  window.addEventListener("keyup", function (e: KeyboardEvent) {
+    if (!e.ctrlKey || finishedMonitoring || !isMonitorKey(e.key)) return
+    const key = MonitorKeysEnum[e.key as MonitorKeys]
+    const actions: MonitorKeyActions = {
+      ArrowUp: () => ({
+        requestType: "novelUpdatesOpenParent",
+        data: options
+      }),
+      ArrowLeft: () => {
+        finishedMonitoring = true
+        return ({
           requestType: "novelUpdatesRemoveFromStore",
           data: options
-        });
+        })
+      },
+      ArrowRight: () => {
+        finishedMonitoring = true
+        return ({
+          requestType: options.parent.id ? "novelUpdatesBGNext" : "novelUpdatesRemoveFromStore",
+          data: options
+        })
       }
-    })().catch(console.error)
+    }
+    browser.runtime
+      .sendMessage(actions[key]())
+      .catch(console.error)
   });
 }
 
@@ -98,11 +118,11 @@ function monitorNovelUpdates(options: novelupdates.ReqData, extensionName: strin
 }
 
 function novelUpdatesUINext(options: novelupdates.StorageEntry) {
-  const $nextChapterLink = $('table#myTable tbody tr[style].newcolorme a.chp-release').last();
-  if ($nextChapterLink.length === 0) {
+  const nextChapterLink = nextUnclickedLink();
+  if (nextChapterLink === null) {
     openNextPage();
   } else {
-    $nextChapterLink[0].dispatchEvent(new MouseEvent('click', {
+    nextChapterLink.link?.dispatchEvent(new MouseEvent('click', {
       shiftKey: !!options.wayback,
       ctrlKey: false,
       cancelable: true
@@ -125,38 +145,58 @@ browser.runtime.onMessage.addListener(
 
 function checkBoxMonitorEvent(element: HTMLAnchorElement, checkbox: HTMLInputElement) {
   return (e: MouseEvent) => {
-    (async () => {
-      e.preventDefault();
-      checkbox.click();
-
-      const wayback = e.shiftKey;
-      const requestType = wayback ? "novelUpdatesOpenPageWayback" : "novelUpdatesOpenPage"
-      await browser.runtime.sendMessage({
+    e.preventDefault();
+    checkbox.click();
+    const wayback = e.shiftKey;
+    const requestType = wayback ? "novelUpdatesOpenPageWayback" : "novelUpdatesOpenPage"
+    browser.runtime
+      .sendMessage({
         data: {
           url: element.href,
           save: !e.ctrlKey,
           wayback
         },
         requestType
-      });
-
-      const $unclickedLinks = $('table#myTable tbody tr[style].newcolorme a.chp-release');
-      if (!document.querySelector('.sttitle a')) {
-        setTimeout(() => window.location.reload(), 1000);
-      } else if ($unclickedLinks.length === 0) {
-        openNextPage();
-      }
-    })().catch(console.error)
+      })
+      .catch(console.error)
+    const unclickedLink = nextUnclickedLink();
+    if (!document.querySelector('.sttitle a')) {
+      setTimeout(() => window.location.reload(), 1000);
+    } else if (unclickedLink !== null) {
+      openNextPage();
+    }
   };
 }
 
+interface LinkAndCheckbox {
+  checkbox?: HTMLInputElement;
+  link?: HTMLAnchorElement;
+}
+
+function columnLinkAndCheckBox(column: HTMLTableDataCellElement): LinkAndCheckbox {
+  const checkbox = column.querySelector<HTMLInputElement>("input")
+  const result: LinkAndCheckbox = {};
+  if(!checkbox) return result;
+  result.checkbox = checkbox;
+  const chapterId = checkbox.id.match(/(\d+)$/)
+  if(!chapterId) return result;
+  const link = column.querySelector<HTMLAnchorElement>(`a.chp-release[href*="${chapterId[1]}"]`)
+  if(!link) return result
+  result.link = link;
+  return result;
+}
+
+function nextUnclickedLink(): LinkAndCheckbox | null {
+  const column = [...document.querySelectorAll<HTMLTableDataCellElement>('table#myTable tbody tr[style].newcolorme td:nth-child(3)')]
+    .slice(-1)
+  return column.length ? columnLinkAndCheckBox(column[0]) : null;
+}
 
 export function checkBoxMonitor() {
   document
     .querySelectorAll<HTMLTableDataCellElement>("table#myTable tr td:nth-child(3)")
     .forEach(el => {
-      const link = el.querySelector<HTMLAnchorElement>("a.chp-release:first-child")
-      const checkbox = el.querySelector<HTMLInputElement>("input")
+      const { checkbox, link } = columnLinkAndCheckBox(el)
       if (!link || !checkbox) return
       link.addEventListener("click", checkBoxMonitorEvent(link, checkbox));
     })

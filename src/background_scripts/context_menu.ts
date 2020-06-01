@@ -4,15 +4,19 @@ import { browser, Menus, Tabs } from 'webextension-polyfill-ts'
 import { range } from '../shared';
 
 function defaultCB(tab: Tabs.Tab, info: Menus.OnClickData, val: object = {}) {
-  return browser.tabs.sendMessage(tab.id, { requestType: info.menuItemId, ...val });
+  return tab.id
+    ? browser.tabs.sendMessage(tab.id, { requestType: info.menuItemId, ...val })
+    : Promise.resolve()
 }
 
 async function webtoonPrompt(tab: Tabs.Tab, info: Menus.OnClickData, data = {
   offset: 0
 }) {
-  const titleOrder = await getTitleOrder(tab.id, {
-    offset: data.offset
-  })
+  const titleOrder = tab.id
+    ? await getTitleOrder(tab.id, {
+        offset: data.offset
+      })
+    : []
   return await defaultCB(tab, info, {
     data: {
       titleOrder,
@@ -31,9 +35,11 @@ const callbacks: context_menus.Callbacks = {
     }).catch(console.error);
   },
   async startPromptDraggableNOffset(tab: Tabs.Tab, info: Menus.OnClickData) {
-    const offset = await browser.tabs.sendMessage(tab.id, {
-      requestType: 'startPromptDraggableNOffset'
-    }).catch(_e => 0)
+    const offset = tab.id
+      ? await browser.tabs.sendMessage(tab.id, {
+          requestType: 'startPromptDraggableNOffset'
+        }).catch(() => 0)
+      : 0
     const moddedInfo = {
       ...info,
       menuItemId: "startPromptDraggable"
@@ -44,7 +50,7 @@ const callbacks: context_menus.Callbacks = {
   },
   openNextChaptersWebtoons(tab: Tabs.Tab, info: Menus.OnClickData) {
     const menuId = info.menuItemId as string
-    const numOfChapters = menuId.match(/\d+$/)
+    const numOfChapters = menuId.match(/\d+$/)!!
     return defaultCB(tab, info, {
       requestType: info.parentMenuItemId,
       data: {
@@ -126,7 +132,8 @@ navigator.userAgent.toLowerCase().includes("firefox")
   });
 
 browser.contextMenus.onClicked.addListener(function (info, tab) {
-  const cb = (callbacks[info.parentMenuItemId] || callbacks[info.menuItemId] || defaultCB) as (t: Tabs.Tab, i: Menus.OnClickData, ...args: any) => Promise<any>
+  if(!tab) return;
+  const cb = (callbacks[info.parentMenuItemId || ''] || callbacks[info.menuItemId] || defaultCB) as (t: Tabs.Tab, i: Menus.OnClickData, ...args: any) => Promise<any>
   cb(tab, info).catch(console.error);
 });
 
