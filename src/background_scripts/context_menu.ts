@@ -1,5 +1,5 @@
 'use strict';
-import { getTitleOrder } from './webtoons';
+import { getTitleOrder, updateTitleOrderAtKeys, webtoonsNativeMessage } from './webtoons';
 import { browser, Menus, Tabs } from 'webextension-polyfill-ts'
 import { range } from '../shared';
 
@@ -57,7 +57,13 @@ const callbacks: context_menus.Callbacks = {
         numOfChapters: parseInt(numOfChapters[0], 10)
       }
     }).catch(console.error);
-  }
+  },
+  async fetchStorageFromNative(tab: Tabs.Tab, info: Menus.OnClickData) {
+    const webtoonOrder = await webtoonsNativeMessage(
+      'fetch_webtoons', null
+    , (x) => x, () => ({}))
+    return await updateTitleOrderAtKeys(tab.id!!, webtoonOrder)
+  },
 }
 const webtoonFavPattern = [
   "*://*.webtoons.com/en/favorite"
@@ -103,7 +109,12 @@ const contextMenuData: Menus.CreateCreatePropertiesType[] = [
     documentUrlPatterns: [
       "*://tseirptranslations.com/*/is-*.html"
     ]
-  }
+  }, {
+    title: "Fetch webtoon order from native store",
+    id: "fetchStorageFromNative",
+    documentUrlPatterns: webtoonFavPattern,
+    contexts: ['all']
+  }, 
 ];
 
 for (const i of range(1, 4)) {

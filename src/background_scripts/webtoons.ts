@@ -22,16 +22,37 @@ export async function getTitleOrder(tabId: number, { offset = 0 } = {}) {
   return order ? order[getWebtoonDay(date, offset)] : [];
 }
 
-async function saveTitleOrder(tabId: number, { order = [], offset = 0 }: {
+interface SaveTitleUpdateEntry {
   order: webtoons.StorageEntry[];
   offset: number;
-}) {
+}
+
+async function saveTitleOrder(tabId: number, updates: SaveTitleUpdateEntry[] = []) {
   const date = await getDate(tabId);
   const data = await browser.storage.sync.get('webtoonOrder')
-  const oldOrder = data.webtoonOrder || {};
-  oldOrder[getWebtoonDay(date, offset)] = order;
-  await browser.storage.sync.set({ webtoonOrder: oldOrder });
-  return oldOrder
+  const webtoonOrder = data.webtoonOrder || {};
+  const updatedOrder = updates.reduce((currentOrder, { order = [], offset = 0 }) => {
+    currentOrder[getWebtoonDay(date, offset)] = order;
+    return currentOrder
+  }, webtoonOrder)
+  await browser.storage.sync.set({ webtoonOrder: updatedOrder });
+  return updatedOrder
+}
+
+type ReplaceTitleUpdateEntry = {
+  [key: string]: webtoons.StorageEntry[];
+}
+
+export async function updateTitleOrderAtKeys(tabId: number, updates: ReplaceTitleUpdateEntry) {
+  const data = await browser.storage.sync.get('webtoonOrder')
+  const webtoonOrder = data.webtoonOrder || {};
+  const updatedOrder = Object.entries(updates)
+    .reduce((currentOrder, [key, order]) => {
+      currentOrder[key] = order;
+      return currentOrder
+    }, webtoonOrder)
+  await browser.storage.sync.set({ webtoonOrder: updatedOrder });
+  return updatedOrder
 }
 
 async function openWebtoonsReading({ urls, numOfChapters }: {
@@ -49,11 +70,35 @@ async function openWebtoonsDraggable({ todayComics, offset }: {
   todayComics: webtoons.StorageEntryFromClient[];
   offset: number;
 }, { windowId, id }: Tabs.Tab) {
-  id && await saveTitleOrder(id, { order: todayComics, offset });
+  if(typeof id !== 'number') return false;
+  const webtoonOrder = await saveTitleOrder(id, [{ order: todayComics, offset }]);
+  const isOrderSaved = await webtoonsNativeMessage(
+    'store_webtoons',  webtoonOrder
+  , () => true, () => false)
   const listener = await setupUpdateListener(todayComics, windowId)
   listener && browser.tabs.onUpdated.addListener(
     listener
   );
+  return isOrderSaved
+}
+
+type NativeMessageKeys = 'store_webtoons' | 'fetch_webtoons' | 'fetch_webtoons_at_day'
+
+export function webtoonsNativeMessage<D, T, U, E extends Error>(key: NativeMessageKeys, data: D, fn?: (res: T) => U, err?: (e: E) => U) {
+  const promise = browser.runtime.sendNativeMessage(
+    'scurrae.webtoons_messaging', {
+      type: key,
+      value: data,
+  })
+  const logError = (e: E) => {
+    console.error('NativeMessage: ' + key + ': ' + e.message);
+  } 
+  return fn 
+    ? promise.then(fn, (e) => {
+        logError(e);
+        return err?.call(null, e);
+      }) 
+    : promise.catch(logError)
 }
 
 async function setupUpdateListener(webtoonPages: webtoons.StorageEntryFromClient[] = [], windowId = 0) {
@@ -110,3 +155,11 @@ browser.runtime.onMessage.addListener(
     }
   }
 );
+
+
+browser.runtime.onInstalled.addListener(() => {
+  webtoonsNativeMessage(
+    'fetch_webtoons', null
+  , (x) => x, () => ({}))
+});
+

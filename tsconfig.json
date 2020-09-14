@@ -3,6 +3,7 @@
     "outDir": "./extension/",
     "noImplicitAny": true,
     "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
     "module": "es6",
     "target": "es6",
     "lib": [
@@ -23,8 +24,10 @@
       "lodash",
       "moment",
       "moment-timezone",
+      "node",
+      "sortablejs"
     ],
-    "strict": true,
+    "strict": true
   },
   "include": [
     "src/**/*",

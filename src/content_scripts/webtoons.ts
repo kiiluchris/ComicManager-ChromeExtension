@@ -1,6 +1,7 @@
 'use strict';
 
-import 'jquery-ui/ui/widgets/sortable';
+import Sortable from 'sortablejs'
+// import 'jquery-ui/ui/widgets/sortable';
 import { webtoonDateFormatted, noOp } from '../shared';
 import { webtoons } from '../../typings/webtoons';
 import { browser } from 'webextension-polyfill-ts'
@@ -48,17 +49,32 @@ function setupOverlaysElements(overLaySpans: string): OverlayElements {
   }
 }
 
-function removeOverlay(listParent: string, getWebtoonList: (selector: string) => JQuery<HTMLElement>) {
-  return (_e: Event) => {
-    const webtoonList = getWebtoonList(listParent)
-    webtoonList.sortable('destroy');
+interface Destroyable {
+  destroy(): void;
+}
+
+function removeOverlay(
+  listParent: string, 
+  getWebtoonList: (selector: string) => JQuery<HTMLElement>,
+  sortable: Destroyable 
+) {
+  return (_e?: Event) => {
+    const webtoonList = getWebtoonList(listParent);
+    sortable.destroy();
+    const sortClass = 'a-sortable';
+    webtoonList.find('li.' + sortClass).removeClass(sortClass);
     webtoonList.find('div.overlay').remove();
   }
 }
 
-function setupOverlaysEvents(comicSelector: string, listParent: string, offset: number, { exit, svg, send }: OverlayElements) {
+function setupOverlaysEvents(
+  comicSelector: string, 
+  listParent: string, 
+  offset: number, { exit, svg, send }: OverlayElements,
+  sortable: Destroyable
+) {
   const getWebtoonList = (selector: string) => jQuery(selector)
-  exit.on("click", removeOverlay(listParent, getWebtoonList));
+  exit.on("click", removeOverlay(listParent, getWebtoonList, sortable));
   //  &#10004; tick signx
   //  &#10006; x
   svg.on('click', function (_e) {
@@ -79,7 +95,12 @@ function setupOverlaysEvents(comicSelector: string, listParent: string, offset: 
         },
         requestType: "hasWebtoonDraggable"
       })
-      .then(removeOverlay(listParent, getWebtoonList))
+      .then((isOrderSaved) => {
+        removeOverlay(listParent, getWebtoonList, sortable)()
+        if(!isOrderSaved){
+          alert('Webtoon Order has not been persisted')
+        }
+      })
       .catch(console.error);
   });
 }
@@ -93,8 +114,9 @@ function setupOverlaySelectLabel(comicEl: HTMLElement) {
 function setupOverlaysAutoSort(comicSelector: string, titleOrder: webtoons.StorageEntry[]) {
   const todayComics = jQuery(comicSelector)
   let unsortedIndex = Math.min(titleOrder.length, todayComics.length)
-  const sortedComics = [...todayComics]
-    .reduce((acc, comicEl) => {
+  let sortedComics = [...todayComics]
+  if(titleOrder.length > 0) {
+    sortedComics = sortedComics.reduce((acc, comicEl) => {
       const comicLink = comicEl.querySelector('a')!!.href
       const i = titleOrder.findIndex((el) => el.link === comicLink);
       const forwardI = ~i ? i : unsortedIndex++
@@ -104,41 +126,44 @@ function setupOverlaysAutoSort(comicSelector: string, titleOrder: webtoons.Stora
       comicEl.remove()
       return acc
     }, new Array(todayComics.length))
+  }
 
   const listContainer = document.querySelector("ul#_webtoonList")
   listContainer?.prepend(...sortedComics.filter(c => c))
 }
 
-async function setupOverlays(currentDate: string, { titleOrder, offset = 0 }: webtoons.OverlayData) {
+async function setupOverlays(currentDate: string, { titleOrder = [], offset = 0 }: webtoons.OverlayData) {
+  const dateFormatted = webtoonDateFormatted(currentDate, offset)
   const list = "ul#_webtoonList";
-  const listItems = `li:has(span.update:contains("${webtoonDateFormatted(currentDate, offset)}"))`;
+  const listItems = `li:has(span.update:contains("${dateFormatted}"))`;
+  const listItemsAll = 'li.a-sortable'
   const comicSelector = [
     list,
     listItems
   ].join(' ')
   const listOverlays = `${listItems} div.overlay`;
+  const overLaySpans = "overlay-spans";
 
   if (jQuery(listOverlays).length !== 0) return
+  
+  const webtoonList = jQuery(list);
 
-  const overLaySpans = "overlay-spans";
+  const sortable = Sortable.create(webtoonList[0], {
+    draggable: listItemsAll,
+  })
   const { div, exit, send, svg } = setupOverlaysElements(overLaySpans)
   setupOverlaysEvents(comicSelector, list, offset, {
     div,
     send,
     exit,
     svg
-  })
-  const webtoonList = jQuery(list);
+  }, sortable)
   let todayComics = webtoonList.find(listItems);
   todayComics.append(div);
+  todayComics.addClass('a-sortable');
 
-  if (titleOrder.length) {
-    setupOverlaysAutoSort(comicSelector, titleOrder)
-    todayComics = jQuery(list).find(listItems);
-  }
-  webtoonList.sortable({
-    items: listItems
-  });
+  setupOverlaysAutoSort(comicSelector, titleOrder);
+  todayComics = jQuery(list).find(listItems);
 
   await browser.runtime.sendMessage({ requestType: "closeWindow" });
 }
@@ -148,7 +173,7 @@ function editOverlayInputs(selectAll: boolean) {
   if (selectAll) {
     selector = ":not(" + selector + ")";
   }
-  jQuery("ul#_webtoonList li:has(.txt_ico_up) div.overlay" + selector + " label.check")
+  jQuery("ul#_webtoonList li div.overlay" + selector + " label.check")
     .trigger("click");
 }
 

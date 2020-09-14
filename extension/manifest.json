@@ -39,6 +39,7 @@
     "tabs",
     "management",
     "http://*/*",
-    "https://*/*"
+    "https://*/*",
+    "nativeMessaging"
   ]
 }

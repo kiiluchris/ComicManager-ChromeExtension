@@ -1,10 +1,2 @@
-node_modules/
-dist/background_scripts.js*
-dist/content_scripts.js*
-dist/options.*
-.vscode/
-server
-timestamp*
-test.js
-*.swp
-.build-env
+node_modules
+tags*

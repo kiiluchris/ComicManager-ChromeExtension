@@ -5,6 +5,7 @@ import './novelupdates';
 import './webtoons';
 import { browser } from 'webextension-polyfill-ts'
 
+
 browser.runtime.onMessage.addListener(
   function (request, sender) {
     if(!sender.tab) return;
@@ -17,6 +18,8 @@ browser.runtime.onMessage.addListener(
     return res
   }
 );
+
+
 
 export async function openPages(urls: string[], tabId?: number, windowId?: number) {
   const tabs = urls.map((url) => {

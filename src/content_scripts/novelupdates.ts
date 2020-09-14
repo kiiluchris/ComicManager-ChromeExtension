@@ -119,10 +119,10 @@ function monitorNovelUpdates(options: novelupdates.ReqData, extensionName: strin
 
 function novelUpdatesUINext(options: novelupdates.StorageEntry) {
   const nextChapterLink = nextUnclickedLink();
-  if (nextChapterLink === null) {
+  if (noUnclickedLink(nextChapterLink)) {
     openNextPage();
   } else {
-    nextChapterLink.link?.dispatchEvent(new MouseEvent('click', {
+    nextChapterLink!!.link?.dispatchEvent(new MouseEvent('click', {
       shiftKey: !!options.wayback,
       ctrlKey: false,
       cancelable: true
@@ -161,8 +161,12 @@ function checkBoxMonitorEvent(element: HTMLAnchorElement, checkbox: HTMLInputEle
       .catch(console.error)
     const unclickedLink = nextUnclickedLink();
     if (!document.querySelector('.sttitle a')) {
-      setTimeout(() => window.location.reload(), 1000);
-    } else if (unclickedLink !== null) {
+      setTimeout(() => {
+        novelListTableCells().length > 1
+          ? window.location.reload()
+          : openNextPage()
+      }, 1000);
+    } else if (noUnclickedLink(unclickedLink)) {
       openNextPage();
     }
   };
@@ -192,9 +196,18 @@ function nextUnclickedLink(): LinkAndCheckbox | null {
   return column.length ? columnLinkAndCheckBox(column[0]) : null;
 }
 
+function noUnclickedLink(link: LinkAndCheckbox | null){
+  return link ? false : nextUnclickedLink() === null
+}
+
+function novelListTableCells(){
+  return document.querySelectorAll<HTMLTableDataCellElement>(
+    "table#myTable tr td:nth-child(3)"
+  )
+}
+
 export function checkBoxMonitor() {
-  document
-    .querySelectorAll<HTMLTableDataCellElement>("table#myTable tr td:nth-child(3)")
+  novelListTableCells()
     .forEach(el => {
       const { checkbox, link } = columnLinkAndCheckBox(el)
       if (!link || !checkbox) return

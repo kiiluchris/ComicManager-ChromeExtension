@@ -11509,7 +11509,7 @@ __webpack_require__.r(__webpack_exports__);
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(/*! babel-polyfill */"./node_modules/babel-polyfill/lib/index.js");
-module.exports = __webpack_require__(/*! /data/Code/Extensions/ComicManager/src/options */"./src/options.ts");
+module.exports = __webpack_require__(/*! /home/scurrae/Code/Extensions/ComicManager/src/options */"./src/options.ts");
 
 
 /***/ })
