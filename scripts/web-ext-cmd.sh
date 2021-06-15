@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 
 CMD=$1
 case $CMD in
-    run|sign) echo "Running \"web-ext $CMD";;
+    run|sign) echo "Running \"web-ext $CMD\"";;
     *) echo "$CMD is not a valid command"; exit 1;;
 esac
 
@@ -15,5 +15,4 @@ cd $DIR
 
 
 
-web-ext $CMD --api-key $API_KEY --api-secret $API_SECRET
-
+web-ext $CMD --api-key $API_KEY --api-secret $API_SECRET -s extension

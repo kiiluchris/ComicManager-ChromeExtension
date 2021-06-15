@@ -14,15 +14,14 @@ interface UserScriptReq {
   data: UserScriptData;
 }
 
-
 interface UserScriptHandlerObj {
   [key: string]: [any, () => void];
 }
 
-type Fn1<T> = (x: T) => T
-type FnN<T> = (...x: T[]) => T
+type Fn1<T> = (x: T) => T;
+type FnN<T> = (...x: T[]) => T;
 
-declare module 'extension-kitchen-sink/import-export-storage';
+declare module "extension-kitchen-sink/import-export-storage";
 
 interface WaybackResponse {
   data: {
